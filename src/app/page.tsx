@@ -1,31 +1,17 @@
-// Main page — Assembles the Flowboard workspace.
-// Toolbar (top) + Canvas (center) + PropertySidebar (right) + ChatPanel (left, toggled)
+import { HeroSection } from "@/components/landing/HeroSection";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { ShowcaseSection } from "@/components/landing/ShowcaseSection";
+import { FooterSection } from "@/components/landing/FooterSection";
 
-"use client";
-
-import { ReactFlowProvider } from "@xyflow/react";
-import { Toolbar } from "@/components/toolbar/Toolbar";
-import { CanvasArea } from "@/components/canvas/CanvasArea";
-import { PropertySidebar } from "@/components/sidebar/PropertySidebar";
-
-export default function Home() {
+export default function LandingPage() {
   return (
-    <ReactFlowProvider>
-      <div className="flex h-screen flex-col overflow-hidden">
-        {/* Top toolbar */}
-        <Toolbar />
-
-        {/* Main content: Canvas + Sidebar */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Canvas takes remaining space */}
-          <div className="flex-1 relative">
-            <CanvasArea />
-          </div>
-
-          {/* Property sidebar (right) */}
-          <PropertySidebar />
-        </div>
-      </div>
-    </ReactFlowProvider>
+    <main className="min-h-screen bg-[#0A0A0B] text-gray-100 flex flex-col font-sans selection:bg-indigo-500/30">
+      <HeroSection />
+      <HowItWorksSection />
+      <FeaturesSection />
+      <ShowcaseSection />
+      <FooterSection />
+    </main>
   );
 }
