@@ -20,13 +20,13 @@ import { nodeTypes } from "@/components/canvas/nodes";
 import { edgeTypes } from "@/components/edges/SemanticEdge";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
-import type { FlowNode } from "@/types/canvas";
+import type { FlowNode, FlowEdge } from "@/types/canvas";
 import type { NodeType } from "@/types/semantic";
 import { AUTO_SAVE_DEBOUNCE_MS } from "@/lib/constants";
 
 export function CanvasArea() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+  const reactFlowInstance = useRef<ReactFlowInstance<FlowNode, FlowEdge> | null>(null);
 
   // Canvas store
   const nodes = useCanvasStore((s) => s.nodes);
@@ -103,7 +103,7 @@ export function CanvasArea() {
   );
 
   // Handle init
-  const onInit = useCallback((instance: ReactFlowInstance) => {
+  const onInit = useCallback((instance: ReactFlowInstance<FlowNode, FlowEdge>) => {
     reactFlowInstance.current = instance;
   }, []);
 

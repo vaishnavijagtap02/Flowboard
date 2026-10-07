@@ -10,7 +10,7 @@ import {
   getBezierPath,
   type EdgeProps,
 } from "@xyflow/react";
-import type { FlowEdgeData } from "@/types/canvas";
+import type { FlowEdge } from "@/types/canvas";
 import { EDGE_RELATIONSHIP_CONFIG } from "@/lib/constants";
 import type { EdgeRelationship } from "@/types/semantic";
 
@@ -24,7 +24,7 @@ function SemanticEdgeComponent({
   targetPosition,
   data,
   selected,
-}: EdgeProps<FlowEdgeData>) {
+}: EdgeProps<FlowEdge>) {
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,

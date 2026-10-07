@@ -1,5 +1,6 @@
 // Canvas Store — Source of truth for all nodes and edges on the canvas.
 // Handles CRUD operations, React Flow callbacks, and persistence.
+// AI mutations are processed via the engine layer (engine/mutationEngine.ts).
 
 import { create } from "zustand";
 import {
@@ -12,8 +13,11 @@ import {
 import { nanoid } from "nanoid";
 import type { FlowNode, FlowEdge, ViewportState } from "@/types/canvas";
 import type { SemanticNode, SemanticGraph } from "@/types/semantic";
-import type { GraphMutation, MutationResult } from "@/types/mutations";
-import { LOCALSTORAGE_KEY } from "@/lib/constants";
+import type { AIMutationPlan, MutationResult } from "@/types/mutations";
+import { processAndApplyMutations } from "@/engine/mutationEngine";
+import { serializeForAI } from "@/engine/serializer";
+import { saveState, loadState, clearState } from "@/lib/persistence";
+import { useChatStore } from "./chatStore";
 
 interface CanvasStore {
   // ─── State ────────────────────────────────────────────────────────────────
@@ -31,7 +35,7 @@ interface CanvasStore {
   removeEdge: (edgeId: string) => void;
 
   // ─── Batch (AI Mutations) ─────────────────────────────────────────────────
-  applyMutations: (mutations: GraphMutation[]) => MutationResult;
+  applyMutations: (plan: AIMutationPlan) => MutationResult;
 
   // ─── React Flow Callbacks ─────────────────────────────────────────────────
   onNodesChange: (changes: NodeChange<FlowNode>[]) => void;
@@ -93,119 +97,23 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   // ─── Batch Mutations (AI) ───────────────────────────────────────────────────
+  // Delegates to engine/mutationEngine.ts for validation + layout + application.
 
-  applyMutations: (mutations) => {
-    const result: MutationResult = { applied: [], rejected: [] };
-    const state = get();
-    let newNodes = [...state.nodes];
-    let newEdges = [...state.edges];
-
-    for (const mutation of mutations) {
-      switch (mutation.action) {
-        case "ADD_NODE": {
-          // Check for duplicate ID
-          if (newNodes.some((n) => n.id === mutation.node.id)) {
-            result.rejected.push({
-              mutation,
-              reason: `Node "${mutation.node.id}" already exists`,
-            });
-            break;
-          }
-          const newNode: FlowNode = {
-            id: mutation.node.id,
-            type: mutation.node.type,
-            position: { x: 0, y: 0 }, // Will be overridden by layout engine
-            data: mutation.node,
-          };
-          newNodes.push(newNode);
-          result.applied.push(mutation);
-          break;
-        }
-
-        case "REMOVE_NODE": {
-          const exists = newNodes.some((n) => n.id === mutation.nodeId);
-          if (!exists) {
-            result.rejected.push({
-              mutation,
-              reason: `Node "${mutation.nodeId}" not found`,
-            });
-            break;
-          }
-          newNodes = newNodes.filter((n) => n.id !== mutation.nodeId);
-          newEdges = newEdges.filter(
-            (e) => e.source !== mutation.nodeId && e.target !== mutation.nodeId
-          );
-          result.applied.push(mutation);
-          break;
-        }
-
-        case "UPDATE_NODE": {
-          const nodeIndex = newNodes.findIndex((n) => n.id === mutation.nodeId);
-          if (nodeIndex === -1) {
-            result.rejected.push({
-              mutation,
-              reason: `Node "${mutation.nodeId}" not found`,
-            });
-            break;
-          }
-          newNodes[nodeIndex] = {
-            ...newNodes[nodeIndex],
-            data: { ...newNodes[nodeIndex].data, ...mutation.updates },
-          };
-          result.applied.push(mutation);
-          break;
-        }
-
-        case "ADD_EDGE": {
-          const sourceExists = newNodes.some((n) => n.id === mutation.edge.source);
-          const targetExists = newNodes.some((n) => n.id === mutation.edge.target);
-          if (!sourceExists || !targetExists) {
-            result.rejected.push({
-              mutation,
-              reason: `Source or target node not found (source: ${mutation.edge.source}, target: ${mutation.edge.target})`,
-            });
-            break;
-          }
-          if (mutation.edge.source === mutation.edge.target) {
-            result.rejected.push({
-              mutation,
-              reason: "Self-referencing edges not allowed",
-            });
-            break;
-          }
-          const newEdge: FlowEdge = {
-            id: `e-${nanoid(8)}`,
-            source: mutation.edge.source,
-            target: mutation.edge.target,
-            type: "semantic",
-            data: {
-              relationship: mutation.edge.relationship,
-              label: mutation.edge.label,
-              protocol: mutation.edge.protocol,
-            },
-          };
-          newEdges.push(newEdge);
-          result.applied.push(mutation);
-          break;
-        }
-
-        case "REMOVE_EDGE": {
-          const edgeExists = newEdges.some((e) => e.id === mutation.edgeId);
-          if (!edgeExists) {
-            result.rejected.push({
-              mutation,
-              reason: `Edge "${mutation.edgeId}" not found`,
-            });
-            break;
-          }
-          newEdges = newEdges.filter((e) => e.id !== mutation.edgeId);
-          result.applied.push(mutation);
-          break;
-        }
-      }
-    }
+  applyMutations: (plan) => {
+    const { nodes, edges } = get();
+    const { nodes: newNodes, edges: newEdges, result } =
+      processAndApplyMutations(plan, nodes, edges);
 
     set({ nodes: newNodes, edges: newEdges });
+
+    // Log rejected mutations for debugging
+    if (result.rejected.length > 0) {
+      console.warn(
+        `[MutationEngine] ${result.rejected.length} mutation(s) rejected:`,
+        result.rejected.map((r) => r.reason)
+      );
+    }
+
     return result;
   },
 
@@ -243,62 +151,40 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   // ─── Serialization ─────────────────────────────────────────────────────────
+  // Delegates to engine/serializer.ts for consistent semantic-only output.
 
   getSemanticGraph: (): SemanticGraph => {
     const { nodes, edges } = get();
-    return {
-      nodes: nodes
-        .map((n) => n.data)
-        .sort((a, b) => a.id.localeCompare(b.id)),
-      edges: edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        relationship: e.data?.relationship ?? "connects_to",
-        label: e.data?.label,
-        protocol: e.data?.protocol,
-      })),
-    };
+    return serializeForAI(nodes, edges);
   },
 
   // ─── Persistence ────────────────────────────────────────────────────────────
 
   saveToLocalStorage: () => {
-    try {
-      const { nodes, edges, viewport } = get();
-      const data = {
-        version: 1,
-        savedAt: new Date().toISOString(),
-        canvas: { nodes, edges, viewport },
-      };
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-    } catch (e) {
-      console.error("Failed to save to localStorage:", e);
-    }
+    const { nodes, edges, viewport } = get();
+    const messages = useChatStore.getState().messages;
+    saveState(nodes, edges, viewport, messages);
   },
 
   loadFromLocalStorage: (): boolean => {
-    try {
-      const raw = localStorage.getItem(LOCALSTORAGE_KEY);
-      if (!raw) return false;
-      const data = JSON.parse(raw);
-      if (data?.version === 1 && data?.canvas) {
-        set({
-          nodes: data.canvas.nodes ?? [],
-          edges: data.canvas.edges ?? [],
-          viewport: data.canvas.viewport ?? { x: 0, y: 0, zoom: 1 },
-        });
-        return true;
+    const data = loadState();
+    if (data?.canvas) {
+      set({
+        nodes: data.canvas.nodes ?? [],
+        edges: data.canvas.edges ?? [],
+        viewport: data.canvas.viewport ?? { x: 0, y: 0, zoom: 1 },
+      });
+      if (data.chat?.messages && data.chat.messages.length > 0) {
+        useChatStore.getState().setMessages(data.chat.messages);
       }
-      return false;
-    } catch (e) {
-      console.error("Failed to load from localStorage:", e);
-      return false;
+      return true;
     }
+    return false;
   },
 
   clearCanvas: () => {
     set({ nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } });
-    localStorage.removeItem(LOCALSTORAGE_KEY);
+    useChatStore.getState().clearMessages();
+    clearState();
   },
 }));

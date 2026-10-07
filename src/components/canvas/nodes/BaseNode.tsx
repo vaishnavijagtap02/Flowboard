@@ -16,7 +16,7 @@ import {
   Monitor,
   type LucideIcon,
 } from "lucide-react";
-import type { FlowNodeData } from "@/types/canvas";
+import type { FlowNode } from "@/types/canvas";
 import { NODE_TYPE_CONFIG } from "@/lib/constants";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -31,7 +31,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Monitor,
 };
 
-interface BaseNodeProps extends NodeProps<FlowNodeData> {}
+interface BaseNodeProps extends NodeProps<FlowNode> {}
 
 function BaseNodeComponent({ id, data, selected }: BaseNodeProps) {
   const config = NODE_TYPE_CONFIG[data.type];

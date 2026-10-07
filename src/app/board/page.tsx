@@ -1,5 +1,6 @@
 // Main page — Assembles the Flowboard workspace.
-// Toolbar (top) + Canvas (center) + PropertySidebar (right) + ChatPanel (left, toggled)
+// Toolbar (top) + ChatPanel (left, toggled) + Canvas (center) + PropertySidebar (right)
+// ArtifactPanel renders as a modal overlay.
 
 "use client";
 
@@ -7,6 +8,8 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { Toolbar } from "@/components/toolbar/Toolbar";
 import { CanvasArea } from "@/components/canvas/CanvasArea";
 import { PropertySidebar } from "@/components/sidebar/PropertySidebar";
+import { ChatPanel } from "@/components/chat/ChatPanel";
+import { ArtifactPanel } from "@/components/artifacts/ArtifactPanel";
 
 export default function Home() {
   return (
@@ -15,8 +18,11 @@ export default function Home() {
         {/* Top toolbar */}
         <Toolbar />
 
-        {/* Main content: Canvas + Sidebar */}
+        {/* Main content: Chat (left) + Canvas (center) + Sidebar (right) */}
         <div className="flex flex-1 overflow-hidden">
+          {/* Chat panel (left, collapsible) */}
+          <ChatPanel />
+
           {/* Canvas takes remaining space */}
           <div className="flex-1 relative">
             <CanvasArea />
@@ -26,6 +32,9 @@ export default function Home() {
           <PropertySidebar />
         </div>
       </div>
+
+      {/* Artifact panel (modal overlay) */}
+      <ArtifactPanel />
     </ReactFlowProvider>
   );
 }

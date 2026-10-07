@@ -44,7 +44,7 @@ export function EdgePropertyEditor({ edge }: EdgePropertyEditorProps) {
             data: { ...e.data, [field]: value },
           }
         : e
-    );
+    ) as FlowEdge[];
     useCanvasStore.setState({ edges: updatedEdges });
   };
 

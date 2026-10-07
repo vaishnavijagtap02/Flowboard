@@ -26,6 +26,7 @@ export interface SemanticNode {
   description?: string;
   responsibilities?: string[];
   properties?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 export interface SemanticEdge {

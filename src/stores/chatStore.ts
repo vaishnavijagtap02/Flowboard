@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { nanoid } from "nanoid";
 import type { ChatMessage } from "@/types/chat";
 import type { AIMutationPlan } from "@/types/mutations";
+import { parseMutationPlan } from "@/engine/mutationEngine";
 import { useCanvasStore } from "./canvasStore";
 
 interface ChatStore {
@@ -9,6 +10,7 @@ interface ChatStore {
   isStreaming: boolean;
   pendingPlan: AIMutationPlan | null;
 
+  setMessages: (messages: ChatMessage[]) => void;
   addMessage: (message: ChatMessage) => void;
   updateMessage: (id: string, updates: Partial<ChatMessage>) => void;
   sendMessage: (content: string) => Promise<void>;
@@ -22,6 +24,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   isStreaming: false,
   pendingPlan: null,
+
+  setMessages: (messages) => set({ messages }),
 
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
   
@@ -37,9 +41,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const { pendingPlan } = get();
     if (!pendingPlan) return;
     
-    // Apply mutations via canvas store
+    // Apply mutations via canvas store (delegates to engine layer)
     const applyMutations = useCanvasStore.getState().applyMutations;
-    applyMutations(pendingPlan.mutations);
+    applyMutations(pendingPlan);
     
     // Update the message status to approved
     set((state) => ({
@@ -127,12 +131,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       let hasPlan = false;
       
       if (parts.length > 1) {
-        try {
-          const rawJson = parts[1].trim();
-          parsedPlan = JSON.parse(rawJson);
+        const rawPlan = parts[1].trim();
+        const plan = parseMutationPlan(rawPlan);
+        if (plan) {
+          parsedPlan = plan;
           hasPlan = true;
-        } catch (e) {
-          console.error("Failed to parse mutation plan JSON:", e);
         }
       }
       

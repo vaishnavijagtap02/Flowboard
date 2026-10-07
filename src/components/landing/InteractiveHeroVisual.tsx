@@ -44,7 +44,7 @@ export function InteractiveHeroVisual() {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     initialNodes.map(n => ({ ...n, data: { ...n.data, generated: false } }))
   );
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [inputValue, setInputValue] = useState("");
