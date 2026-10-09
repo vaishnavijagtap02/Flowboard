@@ -13,6 +13,8 @@ import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { getArtifactPrompt } from "@/lib/prompts";
 import { ArtifactRequestSchema, ARTIFACT_METADATA } from "@/schemas/artifacts";
+import { sanitizeGraph } from "@/lib/sanitizer";
+import { validateGraphForArtifacts } from "@/engine/artifactValidator";
 
 // Allow streaming responses up to 60 seconds (artifact generation can be longer)
 export const maxDuration = 60;
@@ -38,15 +40,37 @@ export async function POST(req: Request) {
 
     const { graph, artifactType } = parsed.data;
 
-    // ── Step 2: Get artifact-specific prompt and metadata ───────────────────
+    // ── Step 2: Sanitize graph ──────────────────────────────────────────────
+    const { sanitizedGraph, redactionCount } = sanitizeGraph(graph);
+
+    // ── Step 3: Deterministic Pre-Validation ─────────────────────────────────
+    const validation = validateGraphForArtifacts(sanitizedGraph, artifactType);
+    if (!validation.valid) {
+      return Response.json(
+        {
+          error: "Graph architecture contains critical errors preventing artifact generation",
+          code: "ARTIFACT_PREVALIDATION_FAILED",
+          details: validation.errors.join("; "),
+        },
+        { status: 422 }
+      );
+    }
+
+    // ── Step 4: Get artifact-specific prompt and metadata ───────────────────
     const systemPrompt = getArtifactPrompt(artifactType);
     const metadata = ARTIFACT_METADATA[artifactType];
 
-    // ── Step 3–4: Call the LLM ──────────────────────────────────────────────
+    const promptContext = `Please generate the artifact based on this architecture graph:\n\n${JSON.stringify(sanitizedGraph, null, 2)}${
+      artifactType === "docker-compose"
+        ? `\n\nVerified Host Port Allocations:\n${JSON.stringify(validation.portMap, null, 2)}`
+        : ""
+    }`;
+
+    // ── Step 5: Call the LLM ────────────────────────────────────────────────
     const result = streamText({
       model: openai("gpt-4o"),
       system: systemPrompt,
-      prompt: `Please generate the artifact based on this architecture graph:\n\n${JSON.stringify(graph, null, 2)}`,
+      prompt: promptContext,
       temperature: 0.1, // Very low for precise code/config generation
     });
 
@@ -58,6 +82,7 @@ export async function POST(req: Request) {
     response.headers.set("X-Artifact-Filename", metadata.filename);
     response.headers.set("X-Artifact-Language", metadata.language);
     response.headers.set("X-Artifact-Type", artifactType);
+    response.headers.set("X-Flowboard-Redactions", String(redactionCount));
 
     return response;
   } catch (error) {

@@ -1,21 +1,20 @@
 // POST /api/ai/chat — AI chat endpoint.
 // Receives a user message + current graph context.
-// Returns a streaming response with an explanation and optionally a mutation plan.
-//
-// From SYSTEM_DESIGN §8.1:
-//   1. Parse and validate request body (Zod)
-//   2. Construct system prompt
-//   3. Inject serialized graph as context
-//   4. Call LLM via Vercel AI SDK
-//   5. Stream response back to client
+// Features:
+//   - Sensitive data / secret redaction (sanitizer)
+//   - Subgraph scoping & token pruning (subgraph engine)
+//   - Intelligent model tier routing (fast vs standard vs reasoning)
+//   - Deterministic graph hashing for caching headers
 
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/prompts";
 import { ChatRequestSchema } from "@/schemas/chat";
+import { sanitizeGraph, sanitizeText } from "@/lib/sanitizer";
+import { computeGraphHash, findFocalNodes, extractSubgraph } from "@/engine/subgraph";
+import { inferModelTier, getModelForTier, MODEL_PROFILES } from "@/lib/models";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow streaming responses up to 45 seconds
+export const maxDuration = 45;
 
 export async function POST(req: Request) {
   try {
@@ -38,28 +37,54 @@ export async function POST(req: Request) {
 
     const { message, graph, history } = parsed.data;
 
-    // ── Step 2–3: Build messages with graph context ─────────────────────────
+    // ── Step 2: Secret & PII Sanitization ───────────────────────────────────
+    const { sanitizedGraph, redactionCount: graphRedactions } = sanitizeGraph(graph);
+    const { text: sanitizedMessage, redactionCount: messageRedactions } = sanitizeText(message);
+    const totalRedactions = graphRedactions + messageRedactions;
+
+    // ── Step 3: Graph Hash & Subgraph Scoping ───────────────────────────────
+    const graphHash = computeGraphHash(sanitizedGraph);
+    const focalNodeIds = findFocalNodes(sanitizedMessage, sanitizedGraph);
+    const { subgraph, tokenReductionRatio } = extractSubgraph(sanitizedGraph, focalNodeIds, 1);
+
+    // ── Step 4: Model Tier Selection ────────────────────────────────────────
+    const tier = inferModelTier(sanitizedMessage, sanitizedGraph.nodes.length);
+    const model = getModelForTier(tier);
+    const profile = MODEL_PROFILES[tier];
+
+    // ── Step 5: Build Chat Messages ─────────────────────────────────────────
     const messages = history.map((msg) => ({
       role: msg.role as "user" | "assistant",
-      content: msg.content,
+      content: sanitizeText(msg.content).text,
     }));
 
-    // Append current message with the graph injected as context
+    // Inject the sanitized (and potentially scoped) graph as context
+    const contextHeader = tokenReductionRatio > 0
+      ? `CURRENT ARCHITECTURE GRAPH (Scoped to active components):\n${JSON.stringify(subgraph, null, 2)}`
+      : `CURRENT ARCHITECTURE GRAPH:\n${JSON.stringify(sanitizedGraph, null, 2)}`;
+
     messages.push({
       role: "user" as const,
-      content: `CURRENT ARCHITECTURE GRAPH:\n${JSON.stringify(graph, null, 2)}\n\nUSER REQUEST:\n${message}`,
+      content: `${contextHeader}\n\nUSER REQUEST:\n${sanitizedMessage}`,
     });
 
-    // ── Step 4: Call the LLM ────────────────────────────────────────────────
+    // ── Step 6: Stream LLM response ─────────────────────────────────────────
     const result = streamText({
-      model: openai("gpt-4o"),
+      model: model,
       system: CHAT_SYSTEM_PROMPT,
       messages: messages,
-      temperature: 0.2, // Low temperature for deterministic structured outputs
+      temperature: profile.temperature,
     });
 
-    // ── Step 5: Stream response ─────────────────────────────────────────────
-    return result.toTextStreamResponse();
+    const response = result.toTextStreamResponse();
+
+    // Add architecture telemetry headers for client
+    response.headers.set("X-Flowboard-Graph-Hash", graphHash);
+    response.headers.set("X-Flowboard-Model-Tier", tier);
+    response.headers.set("X-Flowboard-Token-Reduction-Pct", `${Math.round(tokenReductionRatio * 100)}%`);
+    response.headers.set("X-Flowboard-Redactions", String(totalRedactions));
+
+    return response;
   } catch (error) {
     console.error("AI Chat API Error:", error);
 

@@ -73,3 +73,6 @@ export function serializeForAI(
     edges: edges.map(stripEdgeToSemantic),
   };
 }
+
+export { computeGraphHash } from "./subgraph";
+
