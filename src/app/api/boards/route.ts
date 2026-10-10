@@ -2,14 +2,28 @@
 // DELETE /api/boards?id=... — Delete a board.
 
 import { listBoards, deleteBoard } from "@/lib/storage";
+import { ServerTiming } from "@/lib/serverTiming";
 
 export async function GET() {
+  const timing = new ServerTiming();
   try {
+    timing.start("fetch_boards");
     const result = await listBoards();
-    return Response.json({
-      success: true,
-      ...result,
+    timing.stop("fetch_boards", "Query storage boards catalog");
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      "Cache-Control": "private, max-age=2, stale-while-revalidate=5",
     });
+    timing.applyToHeaders(headers);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ...result,
+      }),
+      { status: 200, headers }
+    );
   } catch (error) {
     console.error("List Boards API Error:", error);
     return Response.json(

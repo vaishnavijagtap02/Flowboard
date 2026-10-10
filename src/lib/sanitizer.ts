@@ -18,11 +18,39 @@ const SECRET_PATTERNS = [
   /\b(?:password|passwd|pwd|secret|api_key|apikey|auth_token|access_token|private_key)\s*[:=]\s*["']?([^\s"';,]+)["']?/gi,
 ];
 
+// Fast single-pass scanner to bypass pattern looping on normal benign text
+const QUICK_SECRET_CHECK = /:\/\/|sk-|ghp_|gho_|AKIA|eyJ|BEGIN|password|passwd|pwd|secret|api_key|apikey|auth_token|access_token|private_key/i;
+
+// Bounded LRU-style memoization cache for sanitized strings (max 1000 entries)
+const SANITIZER_CACHE_MAX = 1000;
+const sanitizerCache = new Map<string, { text: string; redactionCount: number }>();
+
 /**
  * Redacts secrets from a raw string, returning the scrubbed text and count of redactions.
+ * Leverages fast-path pattern detection and LRU caching for microsecond throughput.
  */
 export function sanitizeText(text: string): { text: string; redactionCount: number } {
   if (!text) return { text: "", redactionCount: 0 };
+
+  // 1. Fast Cache Lookup
+  if (text.length < 2048) {
+    const cached = sanitizerCache.get(text);
+    if (cached) return cached;
+  }
+
+  // 2. Fast-path heuristic: If string has no credential/token markers, skip full regex suite
+  if (!QUICK_SECRET_CHECK.test(text)) {
+    const cleanResult = { text, redactionCount: 0 };
+    if (text.length < 2048) {
+      if (sanitizerCache.size >= SANITIZER_CACHE_MAX) {
+        // Evict oldest entry
+        const firstKey = sanitizerCache.keys().next().value;
+        if (firstKey) sanitizerCache.delete(firstKey);
+      }
+      sanitizerCache.set(text, cleanResult);
+    }
+    return cleanResult;
+  }
 
   let sanitized = text;
   let count = 0;
@@ -40,7 +68,18 @@ export function sanitizeText(text: string): { text: string; redactionCount: numb
     });
   }
 
-  return { text: sanitized, redactionCount: count };
+  const result = { text: sanitized, redactionCount: count };
+
+  // Store in cache
+  if (text.length < 2048) {
+    if (sanitizerCache.size >= SANITIZER_CACHE_MAX) {
+      const firstKey = sanitizerCache.keys().next().value;
+      if (firstKey) sanitizerCache.delete(firstKey);
+    }
+    sanitizerCache.set(text, result);
+  }
+
+  return result;
 }
 
 /**

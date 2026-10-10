@@ -96,8 +96,11 @@ export function computeNewNodePositions(
 
       // Use Dagre's relative positioning from the connected nodes
       // but anchor to the average existing position
-      x = avgX + (dagreNode.x - g.node(connectedExisting[0].id)!.x);
-      y = avgY + (dagreNode.y - g.node(connectedExisting[0].id)!.y);
+      const anchorNode = g.node(connectedExisting[0].id);
+      const anchorX = anchorNode?.x ?? 0;
+      const anchorY = anchorNode?.y ?? 0;
+      x = avgX + (dagreNode.x - anchorX);
+      y = avgY + (dagreNode.y - anchorY);
     } else if (existingNodes.length > 0) {
       // No edges to existing nodes — place in an empty area
       // Find the bounding box of existing nodes and place below it

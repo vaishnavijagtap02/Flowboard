@@ -246,4 +246,32 @@ function BaseNodeComponent({ id, data, selected }: BaseNodeProps) {
   );
 }
 
-export const BaseNode = memo(BaseNodeComponent);
+function areBaseNodePropsEqual(prev: BaseNodeProps, next: BaseNodeProps): boolean {
+  if (prev.id !== next.id) return false;
+  if (prev.selected !== next.selected) return false;
+  if (prev.dragging !== next.dragging) return false;
+  if (prev.isConnectable !== next.isConnectable) return false;
+
+  const p = prev.data;
+  const n = next.data;
+  if (p === n) return true;
+  if (!p || !n) return false;
+
+  if (p.id !== n.id) return false;
+  if (p.type !== n.type) return false;
+  if (p.name !== n.name) return false;
+  if (p.technology !== n.technology) return false;
+  if (p.description !== n.description) return false;
+
+  const prevResp = p.responsibilities || [];
+  const nextResp = n.responsibilities || [];
+  if (prevResp.length !== nextResp.length) return false;
+  for (let i = 0; i < prevResp.length; i++) {
+    if (prevResp[i] !== nextResp[i]) return false;
+  }
+
+  return true;
+}
+
+export const BaseNode = memo(BaseNodeComponent, areBaseNodePropsEqual);
+

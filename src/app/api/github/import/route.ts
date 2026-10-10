@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { fetchFileFromRepo } from "@/lib/github";
 import { parseArchitectureSpec } from "@/engine/gitDiff";
+import { ServerTiming } from "@/lib/serverTiming";
 
 const ImportRequestSchema = z.object({
   owner: z.string().min(1),
@@ -12,7 +13,9 @@ const ImportRequestSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const timing = new ServerTiming();
   try {
+    timing.start("validation");
     const tokenHeader = req.headers.get("x-github-token") || undefined;
     const raw = await req.json();
 
@@ -27,10 +30,12 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    timing.stop("validation", "Zod request schema validation");
 
     const { owner, repo, path, ref } = parsed.data;
 
     try {
+      timing.start("github_fetch");
       const { content, sha } = await fetchFileFromRepo({
         owner,
         repo,
@@ -38,15 +43,24 @@ export async function POST(req: Request) {
         ref,
         token: tokenHeader,
       });
+      timing.stop("github_fetch", "Fetch file content from GitHub Octokit API");
 
+      timing.start("parse_spec");
       const graph = parseArchitectureSpec(content);
+      timing.stop("parse_spec", "Parse architecture specification");
 
-      return Response.json({
-        success: true,
-        graph,
-        sha,
-        source: { owner, repo, path, ref },
-      });
+      const headers = new Headers({ "Content-Type": "application/json" });
+      timing.applyToHeaders(headers);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          graph,
+          sha,
+          source: { owner, repo, path, ref },
+        }),
+        { status: 200, headers }
+      );
     } catch (fetchErr) {
       return Response.json(
         {

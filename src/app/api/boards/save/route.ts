@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { saveBoardState } from "@/lib/storage";
+import { ServerTiming } from "@/lib/serverTiming";
 
 const SaveBoardSchema = z.object({
   boardId: z.string().min(1),
@@ -12,7 +13,9 @@ const SaveBoardSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const timing = new ServerTiming();
   try {
+    timing.start("validation");
     const raw = await req.json();
     const parsed = SaveBoardSchema.safeParse(raw);
 
@@ -28,10 +31,16 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    timing.stop("validation", "Zod schema parsing");
 
+    timing.start("storage_write");
     const result = await saveBoardState(parsed.data);
+    timing.stop("storage_write", "Persist board revision snapshot");
 
-    return Response.json(result);
+    const headers = new Headers({ "Content-Type": "application/json" });
+    timing.applyToHeaders(headers);
+
+    return new Response(JSON.stringify(result), { status: 200, headers });
   } catch (error) {
     console.error("Save Board API Error:", error);
     return Response.json(

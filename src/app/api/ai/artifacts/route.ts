@@ -15,12 +15,15 @@ import { getArtifactPrompt } from "@/lib/prompts";
 import { ArtifactRequestSchema, ARTIFACT_METADATA } from "@/schemas/artifacts";
 import { sanitizeGraph } from "@/lib/sanitizer";
 import { validateGraphForArtifacts } from "@/engine/artifactValidator";
+import { ServerTiming } from "@/lib/serverTiming";
 
 // Allow streaming responses up to 60 seconds (artifact generation can be longer)
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const timing = new ServerTiming();
   try {
+    timing.start("validation");
     const rawBody = await req.json();
 
     // ── Step 1: Zod validation ──────────────────────────────────────────────
@@ -37,14 +40,19 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    timing.stop("validation", "Request schema validation");
 
     const { graph, artifactType } = parsed.data;
 
     // ── Step 2: Sanitize graph ──────────────────────────────────────────────
+    timing.start("sanitize");
     const { sanitizedGraph, redactionCount } = sanitizeGraph(graph);
+    timing.stop("sanitize", "Data scrubbing & secret redaction");
 
     // ── Step 3: Deterministic Pre-Validation ─────────────────────────────────
+    timing.start("prevalidation");
     const validation = validateGraphForArtifacts(sanitizedGraph, artifactType);
+    timing.stop("prevalidation", "Structural graph rules check");
     if (!validation.valid) {
       return Response.json(
         {
@@ -176,6 +184,7 @@ export async function POST(req: Request) {
           "X-Flowboard-Mode": "compiler",
         },
       });
+      timing.applyToHeaders(response.headers);
       return response;
     }
 
@@ -195,6 +204,7 @@ export async function POST(req: Request) {
     response.headers.set("X-Artifact-Language", metadata.language);
     response.headers.set("X-Artifact-Type", artifactType);
     response.headers.set("X-Flowboard-Redactions", String(redactionCount));
+    timing.applyToHeaders(response.headers);
 
     return response;
   } catch (error) {

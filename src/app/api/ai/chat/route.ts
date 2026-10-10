@@ -12,12 +12,15 @@ import { ChatRequestSchema } from "@/schemas/chat";
 import { sanitizeGraph, sanitizeText } from "@/lib/sanitizer";
 import { computeGraphHash, findFocalNodes, extractSubgraph } from "@/engine/subgraph";
 import { inferModelTier, getModelForTier, MODEL_PROFILES } from "@/lib/models";
+import { ServerTiming } from "@/lib/serverTiming";
 
 // Allow streaming responses up to 45 seconds
 export const maxDuration = 45;
 
 export async function POST(req: Request) {
+  const timing = new ServerTiming();
   try {
+    timing.start("validation");
     const rawBody = await req.json();
 
     // ── Step 1: Zod validation ──────────────────────────────────────────────
@@ -34,23 +37,30 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    timing.stop("validation", "Request schema validation");
 
     const { message, graph, history } = parsed.data;
 
     // ── Step 2: Secret & PII Sanitization ───────────────────────────────────
+    timing.start("sanitize");
     const { sanitizedGraph, redactionCount: graphRedactions } = sanitizeGraph(graph);
     const { text: sanitizedMessage, redactionCount: messageRedactions } = sanitizeText(message);
     const totalRedactions = graphRedactions + messageRedactions;
+    timing.stop("sanitize", "Data scrubbing & redaction");
 
     // ── Step 3: Graph Hash & Subgraph Scoping ───────────────────────────────
+    timing.start("scoping");
     const graphHash = computeGraphHash(sanitizedGraph);
     const focalNodeIds = findFocalNodes(sanitizedMessage, sanitizedGraph);
     const { subgraph, tokenReductionRatio } = extractSubgraph(sanitizedGraph, focalNodeIds, 1);
+    timing.stop("scoping", "Subgraph focal neighborhood extraction");
 
     // ── Step 4: Model Tier Selection ────────────────────────────────────────
+    timing.start("tier_selection");
     const tier = inferModelTier(sanitizedMessage, sanitizedGraph.nodes.length);
     const model = getModelForTier(tier);
     const profile = MODEL_PROFILES[tier];
+    timing.stop("tier_selection", "Routing to optimal model tier");
 
     // ── Step 5: Build Chat Messages ─────────────────────────────────────────
     const messages = history.map((msg) => ({
@@ -176,6 +186,7 @@ export async function POST(req: Request) {
       });
       response.headers.set("X-Flowboard-Graph-Hash", graphHash);
       response.headers.set("X-Flowboard-Model-Tier", tier);
+      timing.applyToHeaders(response.headers);
       return response;
     }
 
@@ -193,6 +204,7 @@ export async function POST(req: Request) {
     response.headers.set("X-Flowboard-Model-Tier", tier);
     response.headers.set("X-Flowboard-Token-Reduction-Pct", `${Math.round(tokenReductionRatio * 100)}%`);
     response.headers.set("X-Flowboard-Redactions", String(totalRedactions));
+    timing.applyToHeaders(response.headers);
 
     return response;
   } catch (error) {

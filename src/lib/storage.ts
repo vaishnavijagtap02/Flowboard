@@ -148,6 +148,13 @@ export async function saveBoardState(params: {
   };
 
   existingStates.push(newSnapshot);
+
+  // Bound memory snapshots to prevent memory bloat in long sessions (keep latest 50)
+  const MAX_SNAPSHOTS_PER_BOARD = 50;
+  if (existingStates.length > MAX_SNAPSHOTS_PER_BOARD) {
+    existingStates.splice(0, existingStates.length - MAX_SNAPSHOTS_PER_BOARD);
+  }
+
   memoryStates.set(boardId, existingStates);
 
   return {
@@ -423,3 +430,23 @@ export async function deleteBoard(boardId: string): Promise<{ success: boolean }
 
   return { success: true };
 }
+
+/**
+ * Returns in-memory storage metrics and capacity diagnostics.
+ */
+export function getStorageMetrics(): {
+  inMemoryBoardsCount: number;
+  inMemorySnapshotsCount: number;
+  isCloudPersisted: boolean;
+} {
+  let totalSnapshots = 0;
+  for (const states of memoryStates.values()) {
+    totalSnapshots += states.length;
+  }
+  return {
+    inMemoryBoardsCount: memoryBoards.size,
+    inMemorySnapshotsCount: totalSnapshots,
+    isCloudPersisted: isSupabaseConfigured(),
+  };
+}
+

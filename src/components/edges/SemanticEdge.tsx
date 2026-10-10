@@ -112,7 +112,29 @@ function SemanticEdgeComponent({
   );
 }
 
-export const SemanticEdge = memo(SemanticEdgeComponent);
+function areEdgePropsEqual(
+  prev: EdgeProps<FlowEdge>,
+  next: EdgeProps<FlowEdge>
+): boolean {
+  if (prev.id !== next.id) return false;
+  if (prev.selected !== next.selected) return false;
+  if (prev.sourceX !== next.sourceX || prev.sourceY !== next.sourceY) return false;
+  if (prev.targetX !== next.targetX || prev.targetY !== next.targetY) return false;
+  if (prev.sourcePosition !== next.sourcePosition || prev.targetPosition !== next.targetPosition) return false;
+
+  const p = prev.data;
+  const n = next.data;
+  if (p === n) return true;
+  if (!p || !n) return false;
+
+  if (p.relationship !== n.relationship) return false;
+  if (p.label !== n.label) return false;
+  if (p.protocol !== n.protocol) return false;
+
+  return true;
+}
+
+export const SemanticEdge = memo(SemanticEdgeComponent, areEdgePropsEqual);
 
 export const edgeTypes = {
   semantic: SemanticEdge,

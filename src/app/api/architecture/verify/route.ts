@@ -7,6 +7,7 @@ import { lintArchitecture } from "@/engine/linter";
 import { sanitizeGraph } from "@/lib/sanitizer";
 import { SemanticNodeSchema } from "@/schemas/semanticNode";
 import { SemanticEdgeSchema } from "@/schemas/semanticEdge";
+import { ServerTiming } from "@/lib/serverTiming";
 
 const VerifyRequestSchema = z.object({
   graph: z.object({
@@ -16,7 +17,9 @@ const VerifyRequestSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const timing = new ServerTiming();
   try {
+    timing.start("validation");
     const rawBody = await req.json();
 
     const parsed = VerifyRequestSchema.safeParse(rawBody);
@@ -32,19 +35,31 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    timing.stop("validation", "Zod Schema Validation");
 
     const { graph } = parsed.data;
 
     // Sanitize in case sensitive properties exist
-    const { sanitizedGraph } = sanitizeGraph(graph);
+    timing.start("sanitize");
+    const { sanitizedGraph, redactionCount } = sanitizeGraph(graph);
+    timing.stop("sanitize", "Sensitive data scrubbing");
 
     // Run deterministic linter
+    timing.start("linter");
     const report = lintArchitecture(sanitizedGraph);
+    timing.stop("linter", "Graph cycle & SPOF analysis");
 
-    return Response.json({
-      success: true,
-      report,
-    });
+    const headers = new Headers({ "Content-Type": "application/json" });
+    timing.applyToHeaders(headers);
+    headers.set("X-Flowboard-Redactions", String(redactionCount));
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        report,
+      }),
+      { status: 200, headers }
+    );
   } catch (error) {
     console.error("Architecture Verification API Error:", error);
 

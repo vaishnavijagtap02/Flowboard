@@ -38,13 +38,13 @@ export function FloatingNodePalette() {
   const selectNode = useUIStore((s) => s.selectNode);
   const reactFlow = useReactFlow();
 
-  const handleDragStart = (
-    event: React.DragEvent,
-    nodeType: string
-  ) => {
-    event.dataTransfer.setData("application/flowboard-node-type", nodeType);
-    event.dataTransfer.effectAllowed = "move";
-  };
+  const handleDragStart = useCallback(
+    (event: React.DragEvent, nodeType: string) => {
+      event.dataTransfer.setData("application/flowboard-node-type", nodeType);
+      event.dataTransfer.effectAllowed = "move";
+    },
+    []
+  );
 
   const handleClickAdd = useCallback(
     (type: NodeType) => {
