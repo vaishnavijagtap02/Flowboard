@@ -11,21 +11,21 @@ export function AIMessage({ message }: { message: ChatMessage }) {
 
   return (
     <div className="flex gap-2.5">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-violet-600/20 mt-0.5">
-        <Sparkles size={13} className="text-blue-400" />
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ai/15 text-ai border border-ai/30 mt-0.5">
+        <Sparkles size={13} />
       </div>
       <div className="max-w-[85%]">
         <div
-          className={`rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+          className={`rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-xs leading-relaxed shadow-sm ${
             isError
-              ? "bg-red-500/10 text-red-300 border border-red-500/20"
-              : "bg-white/5 text-gray-200 border border-white/5"
+              ? "bg-destructive/10 text-destructive border border-destructive/20"
+              : "bg-secondary/50 text-foreground border border-border"
           }`}
         >
           {isError && (
             <div className="flex items-center gap-1.5 mb-1.5">
-              <AlertCircle size={12} className="text-red-400" />
-              <span className="text-[10px] font-medium text-red-400 uppercase tracking-wider">
+              <AlertCircle size={12} className="text-destructive" />
+              <span className="text-[10px] font-medium text-destructive uppercase tracking-wider">
                 Error
               </span>
             </div>
@@ -33,11 +33,11 @@ export function AIMessage({ message }: { message: ChatMessage }) {
           <div className="whitespace-pre-wrap">
             {message.content}
             {isStreaming && (
-              <span className="inline-block ml-1 animate-pulse">▊</span>
+              <span className="inline-block ml-1 animate-pulse text-ai">▊</span>
             )}
           </div>
         </div>
-        <p className="mt-1 text-[10px] text-gray-600">
+        <p className="mt-1 text-[10px] text-muted-foreground">
           {isStreaming
             ? "Thinking..."
             : new Date(message.timestamp).toLocaleTimeString([], {

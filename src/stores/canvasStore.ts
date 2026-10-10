@@ -18,12 +18,18 @@ import { processAndApplyMutations } from "@/engine/mutationEngine";
 import { serializeForAI } from "@/engine/serializer";
 import { saveState, loadState, clearState } from "@/lib/persistence";
 import { useChatStore } from "./chatStore";
+import { layoutEntireGraph } from "@/engine/layoutEngine";
+import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
 
 interface CanvasStore {
   // ─── State ────────────────────────────────────────────────────────────────
+  boardTitle: string;
   nodes: FlowNode[];
   edges: FlowEdge[];
   viewport: ViewportState;
+
+  // ─── Title ────────────────────────────────────────────────────────────────
+  setBoardTitle: (title: string) => void;
 
   // ─── Node CRUD ────────────────────────────────────────────────────────────
   addNode: (node: FlowNode) => void;
@@ -33,6 +39,10 @@ interface CanvasStore {
   // ─── Edge CRUD ────────────────────────────────────────────────────────────
   addEdge: (edge: FlowEdge) => void;
   removeEdge: (edgeId: string) => void;
+
+  // ─── Layout & Templates ───────────────────────────────────────────────────
+  autoLayout: (direction?: "TB" | "LR") => void;
+  loadTemplate: (templateId: string) => void;
 
   // ─── Batch (AI Mutations) ─────────────────────────────────────────────────
   applyMutations: (plan: AIMutationPlan) => MutationResult;
@@ -46,7 +56,12 @@ interface CanvasStore {
   // ─── Serialization ────────────────────────────────────────────────────────
   getSemanticGraph: () => SemanticGraph;
 
-  // ─── Persistence ──────────────────────────────────────────────────────────
+  setGraphState: (params: {
+    title?: string;
+    nodes: FlowNode[];
+    edges: FlowEdge[];
+    viewport?: ViewportState;
+  }) => void;
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
   clearCanvas: () => void;
@@ -54,9 +69,21 @@ interface CanvasStore {
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   // ─── Initial State ──────────────────────────────────────────────────────────
+  boardTitle: "Distributed System Architecture",
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
+
+  setBoardTitle: (boardTitle) => set({ boardTitle }),
+
+  setGraphState: (params) => {
+    set({
+      boardTitle: params.title || get().boardTitle,
+      nodes: params.nodes,
+      edges: params.edges,
+      viewport: params.viewport || get().viewport,
+    });
+  },
 
   // ─── Node CRUD ──────────────────────────────────────────────────────────────
 
@@ -94,6 +121,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     set((state) => ({
       edges: state.edges.filter((e) => e.id !== edgeId),
     }));
+  },
+
+  // ─── Layout & Templates ─────────────────────────────────────────────────────
+
+  autoLayout: (direction = "TB") => {
+    const { nodes, edges } = get();
+    if (nodes.length === 0) return;
+    const laidOutNodes = layoutEntireGraph(nodes, edges, direction);
+    set({ nodes: laidOutNodes });
+  },
+
+  loadTemplate: (templateId: string) => {
+    const template = ARCHITECTURE_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+    set({
+      boardTitle: template.name,
+      nodes: template.nodes,
+      edges: template.edges,
+    });
   },
 
   // ─── Batch Mutations (AI) ───────────────────────────────────────────────────

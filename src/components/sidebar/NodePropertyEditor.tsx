@@ -1,13 +1,41 @@
-// NodePropertyEditor — Form for editing semantic properties of a selected node.
+// NodePropertyEditor — Figma-level inspector for editing semantic component properties.
+// Features technology suggestions, responsibilities management, and AI actions.
 
 "use client";
 
+import { useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
+import { useUIStore } from "@/stores/uiStore";
+import { useChatStore } from "@/stores/chatStore";
 import { NODE_TYPE_CONFIG, NODE_TYPES } from "@/lib/constants";
 import type { FlowNode } from "@/types/canvas";
 import type { NodeType } from "@/types/semantic";
-import { Plus, Minus } from "lucide-react";
-import { useState } from "react";
+import {
+  Plus,
+  X,
+  Copy,
+  Check,
+  Trash2,
+  Sparkles,
+  Server,
+  Database,
+  Globe,
+  ArrowLeftRight,
+  Zap,
+  Shield,
+  Monitor,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Server,
+  Database,
+  Globe,
+  ArrowLeftRight,
+  Zap,
+  Shield,
+  Monitor,
+};
 
 interface NodePropertyEditorProps {
   node: FlowNode;
@@ -15,9 +43,15 @@ interface NodePropertyEditorProps {
 
 export function NodePropertyEditor({ node }: NodePropertyEditorProps) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
-  const [newResponsibility, setNewResponsibility] = useState("");
+  const removeNode = useCanvasStore((s) => s.removeNode);
+  const clearSelection = useUIStore((s) => s.clearSelection);
+  const setChatOpen = useUIStore((s) => s.setChatOpen);
+  const sendMessage = useChatStore((s) => s.sendMessage);
 
-  const config = NODE_TYPE_CONFIG[node.data.type];
+  const [newResponsibility, setNewResponsibility] = useState("");
+  const [copiedId, setCopiedId] = useState(false);
+
+  const config = NODE_TYPE_CONFIG[node.data.type] || NODE_TYPE_CONFIG.service;
 
   const handleChange = (field: string, value: string) => {
     updateNodeData(node.id, { [field]: value });
@@ -25,6 +59,12 @@ export function NodePropertyEditor({ node }: NodePropertyEditorProps) {
 
   const handleTypeChange = (newType: NodeType) => {
     updateNodeData(node.id, { type: newType });
+  };
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(node.id);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 1500);
   };
 
   const addResponsibility = () => {
@@ -43,111 +83,160 @@ export function NodePropertyEditor({ node }: NodePropertyEditorProps) {
     });
   };
 
+  const handleDelete = () => {
+    removeNode(node.id);
+    clearSelection();
+  };
+
+  const handleAskAI = () => {
+    setChatOpen(true);
+    sendMessage(
+      `Review component "${node.data.name}" (${config.label} - ${node.data.technology || "General"}). Suggest recommended design patterns, caching strategies, and fault tolerances.`
+    );
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Node ID (read-only) */}
+    <div className="space-y-4 text-xs">
+      {/* Component ID */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          ID
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Component ID
         </label>
-        <p className="text-xs text-gray-500 font-mono bg-gray-50 rounded px-2 py-1.5 border border-gray-100">
-          {node.id}
-        </p>
+        <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-2.5 py-1.5 border border-border">
+          <span className="font-mono text-foreground/80 truncate">{node.id}</span>
+          <button
+            onClick={handleCopyId}
+            className="text-muted-foreground hover:text-foreground transition-colors ml-2"
+            title="Copy ID"
+          >
+            {copiedId ? (
+              <Check size={12} className="text-ai" />
+            ) : (
+              <Copy size={12} />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Type selector */}
+      {/* Semantic Type Grid */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          Type
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+          Semantic Primitive
         </label>
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1.5">
           {NODE_TYPES.map((type) => {
             const typeConfig = NODE_TYPE_CONFIG[type];
+            const Icon = ICON_MAP[typeConfig.icon] || Server;
             const isSelected = node.data.type === type;
+
             return (
               <button
                 key={type}
                 onClick={() => handleTypeChange(type)}
-                className={`rounded-md px-2 py-1.5 text-[10px] font-medium transition-all border ${
+                className={`flex flex-col items-center justify-center rounded-lg p-2 transition-all border ${
                   isSelected
-                    ? "shadow-sm"
-                    : "opacity-60 hover:opacity-100"
+                    ? "shadow-sm scale-102"
+                    : "border-border bg-secondary/30 text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                 }`}
                 style={{
-                  backgroundColor: isSelected ? `${typeConfig.color}15` : "transparent",
-                  borderColor: isSelected ? typeConfig.color : "#e5e7eb",
-                  color: typeConfig.color,
+                  backgroundColor: isSelected
+                    ? `${typeConfig.color}20`
+                    : undefined,
+                  borderColor: isSelected ? typeConfig.color : undefined,
+                  color: isSelected ? typeConfig.color : undefined,
                 }}
+                title={typeConfig.label}
               >
-                {typeConfig.label}
+                <Icon size={14} className="mb-1" />
+                <span className="text-[9px] font-medium leading-none">
+                  {typeConfig.label.split(" ")[0]}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Name */}
+      {/* Component Name */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          Name
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Component Name
         </label>
         <input
           type="text"
           value={node.data.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-colors"
-          placeholder="Component name"
+          className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+          placeholder="e.g. Auth Gateway"
         />
       </div>
 
-      {/* Technology */}
+      {/* Technology Stack & Recommendations */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          Technology
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Technology Stack
         </label>
         <input
           type="text"
           value={node.data.technology ?? ""}
           onChange={(e) => handleChange("technology", e.target.value)}
-          className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-colors"
-          placeholder="e.g. Node.js, PostgreSQL, Redis"
+          className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+          placeholder="e.g. Go, PostgreSQL, Redis"
         />
+
+        {/* Quick Suggestion Chips */}
+        {config.defaultTech && config.defaultTech.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            <span className="text-[9px] text-muted-foreground">Suggested:</span>
+            {config.defaultTech.map((tech) => (
+              <button
+                key={tech}
+                onClick={() => handleChange("technology", tech)}
+                className="rounded bg-secondary/50 hover:bg-secondary px-1.5 py-0.5 text-[9px] text-foreground/80 hover:text-foreground border border-border transition-colors"
+              >
+                {tech}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          Description
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Architectural Role
         </label>
         <textarea
           value={node.data.description ?? ""}
           onChange={(e) => handleChange("description", e.target.value)}
           rows={3}
-          className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-colors resize-none"
-          placeholder="What does this component do?"
+          className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors resize-none leading-relaxed"
+          placeholder="Describe purpose, throughput, or SLA..."
         />
       </div>
 
-      {/* Responsibilities */}
+      {/* Responsibilities Tags */}
       <div>
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">
-          Responsibilities
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Responsibilities & Tasks
         </label>
         <div className="space-y-1.5">
           {(node.data.responsibilities ?? []).map((resp, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 rounded-md bg-gray-50 px-2 py-1.5 border border-gray-100 group"
+              className="flex items-center justify-between gap-2 rounded-lg bg-secondary/30 px-2.5 py-1.5 border border-border group"
             >
-              <span className="flex-1 text-xs text-gray-700">{resp}</span>
+              <span className="text-foreground text-[11px] truncate">{resp}</span>
               <button
                 onClick={() => removeResponsibility(index)}
-                className="text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                title="Remove responsibility"
               >
-                <Minus size={12} />
+                <X size={11} />
               </button>
             </div>
           ))}
+
           <div className="flex items-center gap-1.5">
             <input
               type="text"
@@ -156,12 +245,12 @@ export function NodePropertyEditor({ node }: NodePropertyEditorProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") addResponsibility();
               }}
-              className="flex-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-colors"
-              placeholder="Add responsibility..."
+              className="flex-1 rounded-lg border border-border bg-secondary/20 px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
+              placeholder="Add duty (e.g. JWT Auth)..."
             />
             <button
               onClick={addResponsibility}
-              className="rounded-md p-1 text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               <Plus size={14} />
             </button>
@@ -169,9 +258,23 @@ export function NodePropertyEditor({ node }: NodePropertyEditorProps) {
         </div>
       </div>
 
-      {/* Type info */}
-      <div className="rounded-lg p-3 border" style={{ backgroundColor: `${config.color}08`, borderColor: `${config.color}20` }}>
-        <p className="text-[11px] text-gray-500">{config.description}</p>
+      {/* Action Buttons */}
+      <div className="pt-2 border-t border-border space-y-2">
+        <button
+          onClick={handleAskAI}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-ai/30 bg-ai/15 py-2 text-xs font-semibold text-ai hover:bg-ai/25 hover:border-ai/50 transition-colors shadow-sm"
+        >
+          <Sparkles size={13} className="text-ai" />
+          Ask AI to Review Component
+        </button>
+
+        <button
+          onClick={handleDelete}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/15 hover:border-destructive/40 transition-colors"
+        >
+          <Trash2 size={13} />
+          Delete Component
+        </button>
       </div>
     </div>
   );

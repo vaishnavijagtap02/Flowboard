@@ -18,11 +18,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,92 +34,199 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-ice: var(--ice-accent);
+  --color-navy: var(--navy-accent);
+  --color-ai: var(--ai-ice);
+  --color-plum: var(--ai-ice);
+  --color-forest: var(--primary);
+  --color-sage: var(--secondary);
+  --color-deep-forest: var(--foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+/* ─── MIDNIGHT NAVY & ICE BLUE: LIGHT MODE (Crisp Porcelain & Midnight Navy) ─── */
+:root,
+[data-theme="light"] {
+  --background: #F5F8FA;
+  --foreground: #0B132B;
+  --card: #FFFFFF;
+  --card-foreground: #0B132B;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B132B;
+  --primary: #0F1D33;
+  --primary-foreground: #F5F8FA;
+  --secondary: #E2EDF8;
+  --secondary-foreground: #0B132B;
+  --muted: #EBF1F7;
+  --muted-foreground: #4B6175;
+  --accent: #D8E7F5;
+  --accent-foreground: #0B132B;
+  --destructive: #DC2626;
+  --border: rgba(15, 29, 51, 0.10);
+  --input: rgba(15, 29, 51, 0.12);
+  --ring: #0284C7;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #EDF4F9;
+  --sidebar-foreground: #0B132B;
+  --sidebar-primary: #0F1D33;
+  --sidebar-primary-foreground: #F5F8FA;
+  --sidebar-accent: #D8E7F5;
+  --sidebar-accent-foreground: #0B132B;
+  --sidebar-border: rgba(15, 29, 51, 0.08);
+  --sidebar-ring: #0284C7;
+
+  /* Custom Midnight Navy & Ice Blue Tokens */
+  --ai-ice: #0284C7;
+  --ai-ice-bg: rgba(2, 132, 199, 0.10);
+  --ai-ice-border: rgba(2, 132, 199, 0.28);
+  --ice-accent: #0284C7;
+  --navy-accent: #0F1D33;
+  --canvas-dots: rgba(15, 29, 51, 0.10);
+  --panel-glass: rgba(255, 255, 255, 0.94);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* ─── MIDNIGHT NAVY & ICE BLUE: DARK MODE (Deep Midnight Abyss & Ice Blue) ──── */
+.dark,
+[data-theme="dark"] {
+  --background: #090F1A;
+  --foreground: #F0F6FC;
+  --card: #101A29;
+  --card-foreground: #F0F6FC;
+  --popover: #101A29;
+  --popover-foreground: #F0F6FC;
+  --primary: #38BDF8;
+  --primary-foreground: #090F1A;
+  --secondary: #172438;
+  --secondary-foreground: #F0F6FC;
+  --muted: #172438;
+  --muted-foreground: #8FA6BF;
+  --accent: #38BDF8;
+  --accent-foreground: #090F1A;
+  --destructive: #F87171;
+  --border: rgba(143, 166, 191, 0.16);
+  --input: rgba(143, 166, 191, 0.18);
+  --ring: #38BDF8;
+  --sidebar: #0C1422;
+  --sidebar-foreground: #F0F6FC;
+  --sidebar-primary: #38BDF8;
+  --sidebar-primary-foreground: #090F1A;
+  --sidebar-accent: #172438;
+  --sidebar-accent-foreground: #F0F6FC;
+  --sidebar-border: rgba(143, 166, 191, 0.14);
+  --sidebar-ring: #38BDF8;
+
+  /* Custom Midnight Navy & Ice Blue Tokens */
+  --ai-ice: #38BDF8;
+  --ai-ice-bg: rgba(56, 189, 248, 0.15);
+  --ai-ice-border: rgba(56, 189, 248, 0.35);
+  --ice-accent: #38BDF8;
+  --navy-accent: #101A29;
+  --canvas-dots: rgba(143, 166, 191, 0.14);
+  --panel-glass: rgba(16, 26, 41, 0.94);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
+    overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
+}
+
+/* ─── Editorial Scrollbars ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 29, 51, 0.18);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(143, 166, 191, 0.25);
+}
+
+/* ─── React Flow Canvas Styling ────────────────────────────────────── */
+.react-flow__pane {
+  cursor: grab;
+}
+.react-flow__pane.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__controls {
+  border-radius: 10px !important;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  background: var(--panel-glass) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 24px -4px rgba(15, 29, 51, 0.12) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border-bottom: 1px solid var(--border) !important;
+  fill: var(--muted-foreground) !important;
+  transition: all 0.15s ease !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--secondary) !important;
+  fill: var(--foreground) !important;
+}
+
+.react-flow__minimap {
+  background: var(--panel-glass) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -4px rgba(15, 29, 51, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: var(--background) !important;
+  opacity: 0.7 !important;
+}
+
+.react-flow__minimap-node {
+  rx: 4;
+  fill: var(--primary) !important;
+  opacity: 0.8 !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Connection Pulse Animation */
+@keyframes flow-pulse {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.react-flow__edge-animated path {
+  animation: flow-pulse 1.2s linear infinite !important;
 }

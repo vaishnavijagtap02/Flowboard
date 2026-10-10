@@ -1,9 +1,17 @@
-// UI Store — Manages panel visibility, selection, and transient UI state.
+// UI Store — Manages panel visibility, selection, transient UI state, and Midnight Navy & Ice Blue theme.
 
 import { create } from "zustand";
 import type { GeneratedArtifact } from "@/types/artifacts";
 
+export type AppTheme = "light" | "dark";
+export type BotanicalTheme = AppTheme; // Backward-compatible alias
+
 interface UIStore {
+  // ─── Theme State ────────────────────────────────────────────────────────
+  theme: AppTheme;
+  toggleTheme: () => void;
+  setTheme: (theme: AppTheme) => void;
+
   // ─── Selection ──────────────────────────────────────────────────────────
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
@@ -12,6 +20,7 @@ interface UIStore {
   isChatOpen: boolean;
   isPropertySidebarOpen: boolean;
   isArtifactPanelOpen: boolean;
+  isLinterOpen: boolean;
   activeArtifact: GeneratedArtifact | null;
 
   // ─── Actions ────────────────────────────────────────────────────────────
@@ -21,22 +30,51 @@ interface UIStore {
   toggleChat: () => void;
   setChatOpen: (open: boolean) => void;
   togglePropertySidebar: () => void;
+  toggleLinter: () => void;
+  setLinterOpen: (open: boolean) => void;
   openArtifactPanel: () => void;
   closeArtifactPanel: () => void;
   setActiveArtifact: (artifact: GeneratedArtifact | null) => void;
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+function applyThemeToDOM(theme: AppTheme) {
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    try {
+      localStorage.setItem("flowboard:theme", theme);
+    } catch {}
+  }
+}
+
+export const useUIStore = create<UIStore>((set, get) => ({
   // ─── Initial State ──────────────────────────────────────────────────────
+  theme: "light",
   selectedNodeId: null,
   selectedEdgeId: null,
   isChatOpen: false,
   isPropertySidebarOpen: true,
   isArtifactPanelOpen: false,
+  isLinterOpen: false,
   activeArtifact: null,
 
-  // ─── Actions ────────────────────────────────────────────────────────────
+  // ─── Theme Actions ──────────────────────────────────────────────────────
+  toggleTheme: () => {
+    const nextTheme = get().theme === "light" ? "dark" : "light";
+    applyThemeToDOM(nextTheme);
+    set({ theme: nextTheme });
+  },
 
+  setTheme: (theme: AppTheme) => {
+    applyThemeToDOM(theme);
+    set({ theme });
+  },
+
+  // ─── Selection Actions ──────────────────────────────────────────────────
   selectNode: (nodeId) => {
     set({
       selectedNodeId: nodeId,
@@ -69,6 +107,14 @@ export const useUIStore = create<UIStore>((set) => ({
     set((state) => ({
       isPropertySidebarOpen: !state.isPropertySidebarOpen,
     }));
+  },
+
+  toggleLinter: () => {
+    set((state) => ({ isLinterOpen: !state.isLinterOpen }));
+  },
+
+  setLinterOpen: (open) => {
+    set({ isLinterOpen: open });
   },
 
   openArtifactPanel: () => {

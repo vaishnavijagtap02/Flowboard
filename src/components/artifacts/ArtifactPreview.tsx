@@ -46,25 +46,25 @@ export function ArtifactPreview({
   return (
     <div className="flex h-full flex-col">
       {/* Preview Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/30">
         <div className="flex items-center gap-2">
-          <FileCode2 size={14} className="text-blue-400" />
-          <span className="text-sm font-medium text-white">
+          <FileCode2 size={14} className="text-ai" />
+          <span className="text-sm font-medium text-foreground">
             {artifact.filename}
           </span>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-gray-400">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground border border-border">
             {artifact.language}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             {copied ? (
               <>
-                <Check size={13} className="text-emerald-400" />
-                <span className="text-emerald-400">Copied!</span>
+                <Check size={13} className="text-ai" />
+                <span className="text-ai">Copied!</span>
               </>
             ) : (
               <>
@@ -75,7 +75,7 @@ export function ArtifactPreview({
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
           >
             <Download size={13} />
             Download
@@ -84,9 +84,9 @@ export function ArtifactPreview({
       </div>
 
       {/* Code Content */}
-      <div className="flex-1 overflow-auto p-4 bg-[#0a0b0f]">
-        <pre className="text-sm leading-relaxed">
-          <code className="text-gray-300 font-mono">{artifact.content}</code>
+      <div className="flex-1 overflow-auto p-4 bg-card/60">
+        <pre className="text-xs leading-relaxed">
+          <code className="text-foreground font-mono">{artifact.content}</code>
         </pre>
       </div>
     </div>

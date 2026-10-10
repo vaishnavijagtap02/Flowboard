@@ -39,8 +39,8 @@ export function ChatInput() {
   };
 
   return (
-    <div className="border-t border-white/10 p-3 bg-[#0a0b0f]">
-      <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-blue-500/50 transition-colors">
+    <div className="border-t border-border p-3 bg-card/60">
+      <div className="flex items-end gap-2 rounded-xl border border-border bg-secondary/30 px-3 py-2 focus-within:border-ai/50 focus-within:ring-1 focus-within:ring-ai/30 transition-colors">
         <textarea
           ref={textareaRef}
           value={input}
@@ -48,24 +48,24 @@ export function ChatInput() {
           onKeyDown={handleKeyDown}
           placeholder={
             isStreaming
-              ? "AI is responding..."
+              ? "AI is synthesizing..."
               : "Ask about your architecture..."
           }
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none bg-transparent text-sm text-white placeholder-gray-500 outline-none disabled:opacity-50"
+          className="flex-1 resize-none bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none disabled:opacity-50"
           style={{ maxHeight: 120 }}
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || isStreaming}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-violet-600 text-white transition-all hover:from-blue-600 hover:to-violet-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ai text-white transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
         >
-          <Send size={14} />
+          <Send size={13} />
         </button>
       </div>
-      <p className="mt-1.5 text-[10px] text-gray-500 text-center">
-        Shift+Enter for new line · AI will propose changes for your approval
+      <p className="mt-1.5 text-[10px] text-muted-foreground text-center">
+        Shift+Enter for newline · AI proposes changes for your approval
       </p>
     </div>
   );

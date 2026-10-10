@@ -1,4 +1,4 @@
-// ChatMessageList — Scrollable list of chat messages with auto-scroll.
+// ChatMessageList — Scrollable list of chat messages with auto-scroll and quick architectural prompts.
 
 "use client";
 
@@ -7,7 +7,26 @@ import { useChatStore } from "@/stores/chatStore";
 import { UserMessage } from "./UserMessage";
 import { AIMessage } from "./AIMessage";
 import { MutationPlanMessage } from "./MutationPlanMessage";
-import { MessageSquare } from "lucide-react";
+import { Sparkles, Terminal, Zap, Shield, ArrowRight } from "lucide-react";
+
+const SUGGESTED_PROMPTS = [
+  {
+    icon: <Zap size={12} className="text-amber-500" />,
+    text: "Add a Redis caching layer for read replica performance",
+  },
+  {
+    icon: <Shield size={12} className="text-primary" />,
+    text: "Introduce an API Gateway with JWT verification and rate limiting",
+  },
+  {
+    icon: <ArrowRight size={12} className="text-ai" />,
+    text: "Decouple processing using a Kafka event queue",
+  },
+  {
+    icon: <Terminal size={12} className="text-primary" />,
+    text: "Inspect single points of failure and synchronous deadlocks",
+  },
+];
 
 export function ChatMessageList() {
   const messages = useChatStore((s) => s.messages);
@@ -22,24 +41,23 @@ export function ChatMessageList() {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-600/20 mb-3">
-          <MessageSquare size={22} className="text-blue-400" />
+      <div className="flex-1 flex flex-col items-center justify-center p-5 text-center">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ai/15 border border-ai/30 mb-3 shadow-lg shadow-ai/5">
+          <Sparkles size={20} className="text-ai" />
         </div>
-        <h4 className="text-sm font-medium text-white mb-1">
-          Start a conversation
+        <h4 className="text-xs font-bold text-foreground mb-1 tracking-tight">
+          System Design Copilot
         </h4>
-        <p className="text-xs text-gray-500 max-w-[240px] leading-relaxed">
-          Ask the AI to analyze your architecture, add components, or suggest
-          improvements. It can see your entire graph.
+        <p className="text-[11px] text-muted-foreground max-w-[260px] leading-relaxed mb-4">
+          Ask Flowboard AI to optimize your design, add microservices, inject caches, or propose architecture refactors.
         </p>
-        <div className="mt-4 space-y-2 w-full max-w-[240px]">
-          {[
-            "Add a Redis cache layer",
-            "What are the bottlenecks?",
-            "Add auth service with JWT",
-          ].map((suggestion) => (
-            <SuggestionChip key={suggestion} text={suggestion} />
+
+        <div className="w-full space-y-1.5">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground text-left px-1">
+            Suggested Actions
+          </p>
+          {SUGGESTED_PROMPTS.map((prompt, i) => (
+            <SuggestionButton key={i} icon={prompt.icon} text={prompt.text} />
           ))}
         </div>
       </div>
@@ -47,7 +65,7 @@ export function ChatMessageList() {
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto p-3.5 space-y-3">
       {messages.map((msg) => {
         if (msg.role === "user") {
           return <UserMessage key={msg.id} message={msg} />;
@@ -63,15 +81,28 @@ export function ChatMessageList() {
   );
 }
 
-function SuggestionChip({ text }: { text: string }) {
+function SuggestionButton({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) {
   const sendMessage = useChatStore((s) => s.sendMessage);
 
   return (
     <button
       onClick={() => sendMessage(text)}
-      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+      className="w-full flex items-center gap-2 rounded-xl border border-border bg-secondary/40 px-3 py-2 text-left text-xs text-foreground/80 hover:text-foreground hover:bg-secondary hover:border-ai/30 transition-all group"
     >
-      {text}
+      <span className="shrink-0">{icon}</span>
+      <span className="text-[11px] line-clamp-1 flex-1 leading-normal">
+        {text}
+      </span>
+      <ArrowRight
+        size={11}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity shrink-0"
+      />
     </button>
   );
 }

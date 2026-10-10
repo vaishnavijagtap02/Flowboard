@@ -1,29 +1,53 @@
 // src/lib/supabase.ts
-// Supabase client initialization for server-side persistence and versioning.
+// Supabase client initialization for browser authentication and database persistence.
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-let clientInstance: SupabaseClient | null = null;
+let browserClient: SupabaseClient | null = null;
+let serverClient: SupabaseClient | null = null;
 
 /**
- * Returns a configured Supabase client if environment variables are present,
- * or null if Supabase is not yet configured.
+ * Returns true if public Supabase environment variables are available.
  */
-export function getSupabaseClient(): SupabaseClient | null {
-  if (clientInstance) return clientInstance;
+export function isSupabaseConfigured(): boolean {
+  return Boolean(supabaseUrl && supabaseAnonKey);
+}
 
-  if (supabaseUrl && supabaseKey) {
-    clientInstance = createClient(supabaseUrl, supabaseKey);
-    return clientInstance;
+/**
+ * Returns a Supabase client configured for browser-side authentication and querying.
+ */
+export function getBrowserSupabaseClient(): SupabaseClient | null {
+  if (browserClient) return browserClient;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    browserClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+    return browserClient;
   }
 
   return null;
 }
 
-export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl && supabaseKey);
+/**
+ * Returns a Supabase client for server-side persistence (API routes),
+ * using the service role key if present, or falling back to anon key.
+ */
+export function getSupabaseClient(): SupabaseClient | null {
+  if (serverClient) return serverClient;
+
+  const key = supabaseServiceKey || supabaseAnonKey;
+  if (supabaseUrl && key) {
+    serverClient = createClient(supabaseUrl, key);
+    return serverClient;
+  }
+
+  return null;
 }

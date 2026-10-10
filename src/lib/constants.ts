@@ -7,73 +7,112 @@ import type { NodeType, EdgeRelationship } from "@/types/semantic";
 
 export interface NodeTypeConfig {
   label: string;
+  category: "compute" | "data" | "networking" | "messaging" | "client";
   icon: string;       // Lucide icon name
   color: string;      // Primary accent color
-  bgColor: string;    // Light background for the node
+  bgColor: string;    // Light background for fallback
   borderColor: string;
+  darkBg: string;     // Premium dark card surface
+  glowColor: string;
+  shortcut: string;   // Keyboard shortcut hint
   description: string;
+  defaultTech: string[];
 }
 
 export const NODE_TYPE_CONFIG: Record<NodeType, NodeTypeConfig> = {
   service: {
     label: "Service",
+    category: "compute",
     icon: "Server",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
-    borderColor: "#93C5FD",
-    description: "A backend service or microservice",
+    color: "#0284C7",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(2, 132, 199, 0.3)",
+    darkBg: "#101A29",
+    glowColor: "rgba(2, 132, 199, 0.2)",
+    shortcut: "S",
+    description: "A backend service, microservice, or worker",
+    defaultTech: ["Node.js", "Go", "FastAPI", "Rust", "Spring Boot", "Next.js"],
   },
   database: {
     label: "Database",
+    category: "data",
     icon: "Database",
-    color: "#10B981",
-    bgColor: "#ECFDF5",
-    borderColor: "#6EE7B7",
-    description: "A database or data store",
+    color: "#2563EB",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(37, 99, 235, 0.3)",
+    darkBg: "#0F1829",
+    glowColor: "rgba(37, 99, 235, 0.2)",
+    shortcut: "D",
+    description: "A relational database, document store, or data warehouse",
+    defaultTech: ["PostgreSQL", "MySQL", "MongoDB", "ClickHouse", "DynamoDB"],
   },
   api: {
-    label: "API",
+    label: "API Endpoint",
+    category: "networking",
     icon: "Globe",
-    color: "#F59E0B",
-    bgColor: "#FFFBEB",
-    borderColor: "#FCD34D",
-    description: "An API endpoint or external API",
+    color: "#06B6D4",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(6, 182, 212, 0.3)",
+    darkBg: "#0E1B2B",
+    glowColor: "rgba(6, 182, 212, 0.2)",
+    shortcut: "A",
+    description: "An external or internal HTTP / gRPC API boundary",
+    defaultTech: ["REST", "GraphQL", "gRPC", "tRPC", "WebSocket"],
   },
   queue: {
-    label: "Queue",
+    label: "Queue / Bus",
+    category: "messaging",
     icon: "ArrowLeftRight",
-    color: "#8B5CF6",
-    bgColor: "#F5F3FF",
-    borderColor: "#C4B5FD",
-    description: "A message queue or event bus",
+    color: "#6366F1",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(99, 102, 241, 0.3)",
+    darkBg: "#12172D",
+    glowColor: "rgba(99, 102, 241, 0.2)",
+    shortcut: "Q",
+    description: "A message broker, stream, or event bus",
+    defaultTech: ["Kafka", "RabbitMQ", "AWS SQS", "NATS", "Redis Streams"],
   },
   cache: {
     label: "Cache",
+    category: "data",
     icon: "Zap",
-    color: "#EF4444",
-    bgColor: "#FEF2F2",
-    borderColor: "#FCA5A5",
-    description: "A caching layer",
+    color: "#D97706",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(217, 119, 6, 0.3)",
+    darkBg: "#1E1A14",
+    glowColor: "rgba(217, 119, 6, 0.2)",
+    shortcut: "C",
+    description: "An in-memory caching layer or key-value store",
+    defaultTech: ["Redis", "Memcached", "Dragonfly", "Upstash"],
   },
   gateway: {
-    label: "Gateway",
+    label: "API Gateway",
+    category: "networking",
     icon: "Shield",
-    color: "#14B8A6",
-    bgColor: "#F0FDFA",
-    borderColor: "#5EEAD4",
-    description: "An API gateway or load balancer",
+    color: "#0D9488",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(13, 148, 136, 0.3)",
+    darkBg: "#0D1C22",
+    glowColor: "rgba(13, 148, 136, 0.2)",
+    shortcut: "G",
+    description: "An ingress gateway, reverse proxy, or load balancer",
+    defaultTech: ["Kong", "Envoy", "Traefik", "NGINX", "Cloudflare"],
   },
   client: {
-    label: "Client",
+    label: "Client App",
+    category: "client",
     icon: "Monitor",
-    color: "#6B7280",
-    bgColor: "#F9FAFB",
-    borderColor: "#D1D5DB",
-    description: "A client application (web, mobile, CLI)",
+    color: "#38BDF8",
+    bgColor: "#FFFFFF",
+    borderColor: "rgba(56, 189, 248, 0.3)",
+    darkBg: "#0E1C2B",
+    glowColor: "rgba(56, 189, 248, 0.2)",
+    shortcut: "W",
+    description: "A client application (web app, mobile app, CLI)",
+    defaultTech: ["React / Web", "iOS / Android", "CLI Tool", "Electron"],
   },
 } as const;
 
-// All available node types as an array (for palette rendering)
 export const NODE_TYPES: NodeType[] = [
   "service",
   "database",
@@ -98,31 +137,31 @@ export const EDGE_RELATIONSHIP_CONFIG: Record<EdgeRelationship, EdgeRelationship
     label: "connects to",
     style: "solid",
     animated: false,
-    color: "#6B7280",
+    color: "#0284C7",
   },
   reads_from: {
     label: "reads from",
     style: "solid",
     animated: false,
-    color: "#3B82F6",
+    color: "#38BDF8",
   },
   writes_to: {
     label: "writes to",
     style: "solid",
     animated: true,
-    color: "#10B981",
+    color: "#2563EB",
   },
   publishes_to: {
     label: "publishes to",
     style: "dashed",
     animated: true,
-    color: "#8B5CF6",
+    color: "#6366F1",
   },
   subscribes_to: {
     label: "subscribes to",
     style: "dashed",
     animated: true,
-    color: "#F59E0B",
+    color: "#06B6D4",
   },
 } as const;
 

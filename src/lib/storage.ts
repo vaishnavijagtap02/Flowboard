@@ -340,3 +340,86 @@ export async function rollbackBoardVersion(
 
   return { success: true, state: target };
 }
+
+/**
+ * Lists all boards (cloud or memory store) with state metadata.
+ */
+export async function listBoards(): Promise<{
+  boards: Array<BoardMetadata & { nodeCount?: number; edgeCount?: number }>;
+  isCloudPersisted: boolean;
+}> {
+  const supabase = getSupabaseClient();
+
+  if (supabase) {
+    try {
+      const { data: boards, error } = await supabase
+        .from("boards")
+        .select("id, name, description, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+
+      if (!error && boards) {
+        return {
+          boards: boards.map((b) => ({
+            id: b.id,
+            name: b.name,
+            description: b.description,
+            createdAt: b.created_at,
+            updatedAt: b.updated_at,
+          })),
+          isCloudPersisted: true,
+        };
+      }
+    } catch (err) {
+      console.error("Supabase listBoards failed, using local store:", err);
+    }
+  }
+
+  // Memory fallback
+  const boardsList = Array.from(memoryBoards.values()).map((b) => {
+    const states = memoryStates.get(b.id) || [];
+    const active = states.find((s) => s.isActive) || states[states.length - 1];
+    let nodeCount = 0;
+    let edgeCount = 0;
+    if (active && active.canvasData && typeof active.canvasData === "object") {
+      const data = active.canvasData as any;
+      nodeCount = Array.isArray(data.nodes) ? data.nodes.length : 0;
+      edgeCount = Array.isArray(data.edges) ? data.edges.length : 0;
+    }
+
+    return {
+      ...b,
+      nodeCount,
+      edgeCount,
+    };
+  });
+
+  boardsList.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  return {
+    boards: boardsList,
+    isCloudPersisted: false,
+  };
+}
+
+/**
+ * Deletes a board by ID.
+ */
+export async function deleteBoard(boardId: string): Promise<{ success: boolean }> {
+  const supabase = getSupabaseClient();
+
+  if (supabase) {
+    try {
+      await supabase.from("board_states").delete().eq("board_id", boardId);
+      await supabase.from("boards").delete().eq("id", boardId);
+    } catch (err) {
+      console.error("Supabase deleteBoard failed:", err);
+    }
+  }
+
+  memoryBoards.delete(boardId);
+  memoryStates.delete(boardId);
+
+  return { success: true };
+}

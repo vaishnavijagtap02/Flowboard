@@ -139,3 +139,52 @@ function findConnectedExistingNodes(
     .map((id) => existingNodeMap.get(id)!)
     .filter(Boolean);
 }
+
+/**
+ * Lays out the entire graph automatically using Dagre.
+ * Useful for user-triggered "Auto-Layout" button in the toolbar.
+ */
+export function layoutEntireGraph(
+  nodes: FlowNode[],
+  edges: FlowEdge[],
+  direction: "TB" | "LR" = "TB"
+): FlowNode[] {
+  if (nodes.length === 0) return [];
+
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({
+    rankdir: direction,
+    nodesep: 90,
+    ranksep: 90,
+    marginx: 80,
+    marginy: 80,
+  });
+
+  for (const node of nodes) {
+    g.setNode(node.id, {
+      width: DEFAULT_NODE_WIDTH,
+      height: DEFAULT_NODE_HEIGHT,
+    });
+  }
+
+  for (const edge of edges) {
+    g.setEdge(edge.source, edge.target);
+  }
+
+  dagre.layout(g);
+
+  return nodes.map((node) => {
+    const dagreNode = g.node(node.id);
+    if (!dagreNode) return node;
+
+    return {
+      ...node,
+      position: {
+        x: Math.round(dagreNode.x - DEFAULT_NODE_WIDTH / 2),
+        y: Math.round(dagreNode.y - DEFAULT_NODE_HEIGHT / 2),
+      },
+    };
+  });
+}
+
