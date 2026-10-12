@@ -71,3 +71,32 @@ CREATE POLICY "Allow public read/write for artifacts"
   ON artifacts FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- 5. Automatic RLS Event Trigger
+-- Automatically enables Row Level Security on any new table created in the public schema
+CREATE OR REPLACE FUNCTION public.enable_rls_on_new_tables()
+RETURNS event_trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  rec RECORD;
+BEGIN
+  FOR rec IN 
+    SELECT * 
+    FROM pg_event_trigger_ddl_commands() 
+    WHERE command_tag = 'CREATE TABLE' 
+      AND schema_name = 'public'
+      AND NOT in_extension
+  LOOP
+    EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY;', rec.object_identity);
+  END LOOP;
+END;
+$$;
+
+DROP EVENT TRIGGER IF EXISTS trg_enable_rls_on_new_tables;
+
+CREATE EVENT TRIGGER trg_enable_rls_on_new_tables
+ON ddl_command_end
+WHEN TAG IN ('CREATE TABLE')
+EXECUTE FUNCTION public.enable_rls_on_new_tables();

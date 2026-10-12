@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { isAIConfigured, getVisionModel } from "@/lib/models";
 import { AIMutationPlanSchema } from "@/schemas/mutations";
 import { ServerTiming } from "@/lib/serverTiming";
 import type { AIMutationPlan } from "@/types/mutations";
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     }
 
     // ── Zero-config Demo Mode Fallback ──────────────────────────────────────
-    if (!process.env.OPENAI_API_KEY) {
+    if (!isAIConfigured()) {
       const demoId = Date.now().toString(36).slice(-4);
       const hintLower = (hint || "").toLowerCase();
 
@@ -326,7 +326,7 @@ export async function POST(req: Request) {
       : "Extract all components, protocols, technologies, and connection arrows from this architecture screenshot into a structured Flowboard mutation plan.";
 
     const result = await generateText({
-      model: openai("gpt-4o"),
+      model: getVisionModel(),
       system: VISION_SYSTEM_PROMPT,
       messages: [
         {

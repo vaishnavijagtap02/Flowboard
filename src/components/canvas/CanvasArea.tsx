@@ -27,6 +27,7 @@ import type { FlowNode, FlowEdge } from "@/types/canvas";
 import type { NodeType } from "@/types/semantic";
 import { NODE_TYPE_CONFIG } from "@/lib/constants";
 import { AUTO_SAVE_DEBOUNCE_MS } from "@/lib/constants";
+import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
 
 export function CanvasArea() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -269,34 +270,58 @@ export function CanvasArea() {
 
       {/* Empty State Banner (Shown when 0 nodes) */}
       {nodes.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="pointer-events-auto max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-xl">
-            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-primary border border-border">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 px-4">
+          <div className="pointer-events-auto max-w-xl w-full rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <Sparkles size={20} />
             </div>
-            <h2 className="text-sm font-bold text-foreground mb-1">
-              Canvas is Ready
+            <h2 className="text-base font-bold text-foreground mb-1">
+              Start Designing Your System
             </h2>
-            <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
-              Start by choosing an architectural blueprint, dragging components from the dock, or prompting Flowboard AI.
+            <p className="text-xs text-muted-foreground mb-5 leading-relaxed max-w-md mx-auto">
+              Select an architectural blueprint to explore, drag components from the bottom palette, or prompt Flowboard AI to generate a custom topology.
             </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => loadTemplate("ecommerce")}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
-              >
-                <Layers size={14} />
-                Load E-Commerce Architecture
-              </button>
+
+            <div className="mb-4 text-left">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80 mb-2 px-1">
+                Architectural Blueprints:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {ARCHITECTURE_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    onClick={() => loadTemplate(tmpl.id)}
+                    className="flex flex-col text-left rounded-xl border border-border/80 bg-secondary/30 hover:bg-secondary/70 hover:border-primary/50 p-3 transition-all group"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        {tmpl.badge}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {tmpl.nodeCount} nodes
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {tmpl.name}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-snug">
+                      {tmpl.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-border/60">
               <button
                 onClick={() => {
                   setChatOpen(true);
-                  sendMessage("Design a resilient real-time microservices architecture with an API Gateway, Redis cache, and Kafka queue.");
+                  sendMessage("Design a resilient cloud architecture with API Gateway, microservices, database, cache, and message queue.");
                 }}
-                className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 px-4 py-2 text-xs font-medium text-foreground/80 hover:bg-secondary transition-colors"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-95 transition-all shadow-md hover:shadow-primary/20"
               >
-                <Sparkles size={14} className="text-ai" />
-                Prompt AI to Design Architecture
+                <Sparkles size={14} />
+                Prompt AI to Design Custom System
               </button>
             </div>
           </div>

@@ -7,10 +7,8 @@
 //   2. Select artifact-specific prompt template
 //   3. Inject serialized graph as context
 //   4. Call LLM via Vercel AI SDK
-//   5. Stream artifact content back to client
-
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { isAIConfigured, getArtifactModel } from "@/lib/models";
 import { getArtifactPrompt } from "@/lib/prompts";
 import { ArtifactRequestSchema, ARTIFACT_METADATA } from "@/schemas/artifacts";
 import { sanitizeGraph } from "@/lib/sanitizer";
@@ -75,7 +73,7 @@ export async function POST(req: Request) {
     }`;
 
     // ── Step 5: Call the LLM or Deterministic Compiler ─────────────────────
-    if (!process.env.OPENAI_API_KEY) {
+    if (!isAIConfigured()) {
       let content = "";
 
       if (artifactType === "docker-compose") {
@@ -189,7 +187,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: openai("gpt-4o"),
+      model: getArtifactModel(),
       system: systemPrompt,
       prompt: promptContext,
       temperature: 0.1, // Very low for precise code/config generation

@@ -50,6 +50,7 @@ export async function GET() {
       },
       integrations: {
         openai: Boolean(process.env.OPENAI_API_KEY),
+        gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY),
         supabase: isSupabaseConfigured(),
       },
     }),

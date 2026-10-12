@@ -11,7 +11,7 @@ import { CHAT_SYSTEM_PROMPT } from "@/lib/prompts";
 import { ChatRequestSchema } from "@/schemas/chat";
 import { sanitizeGraph, sanitizeText } from "@/lib/sanitizer";
 import { computeGraphHash, findFocalNodes, extractSubgraph } from "@/engine/subgraph";
-import { inferModelTier, getModelForTier, MODEL_PROFILES } from "@/lib/models";
+import { inferModelTier, getModelForTier, MODEL_PROFILES, isAIConfigured } from "@/lib/models";
 import { ServerTiming } from "@/lib/serverTiming";
 import type { GraphMutation } from "@/types/mutations";
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     });
 
     // ── Step 6: Stream LLM response (or dev mode fallback) ───────────────────
-    if (!process.env.OPENAI_API_KEY) {
+    if (!isAIConfigured()) {
       const lower = sanitizedMessage.toLowerCase();
       let explanation = "";
       const mutations: GraphMutation[] = [];
