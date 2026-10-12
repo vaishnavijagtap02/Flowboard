@@ -388,7 +388,7 @@ export async function listBoards(): Promise<{
     let nodeCount = 0;
     let edgeCount = 0;
     if (active && active.canvasData && typeof active.canvasData === "object") {
-      const data = active.canvasData as any;
+      const data = active.canvasData as Record<string, unknown>;
       nodeCount = Array.isArray(data.nodes) ? data.nodes.length : 0;
       edgeCount = Array.isArray(data.edges) ? data.edges.length : 0;
     }

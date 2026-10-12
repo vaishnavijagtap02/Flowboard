@@ -36,7 +36,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Monitor,
 };
 
-interface BaseNodeProps extends NodeProps<FlowNode> {}
+type BaseNodeProps = NodeProps<FlowNode>;
 
 function BaseNodeComponent({ id, data, selected }: BaseNodeProps) {
   const config = NODE_TYPE_CONFIG[data.type] || NODE_TYPE_CONFIG.service;
@@ -56,12 +56,14 @@ function BaseNodeComponent({ id, data, selected }: BaseNodeProps) {
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newId = `${data.type}-${nanoid(6)}`;
+    const posX = typeof (data as Record<string, unknown>).x === "number" ? ((data as Record<string, unknown>).x as number) : 140;
+    const posY = typeof (data as Record<string, unknown>).y === "number" ? ((data as Record<string, unknown>).y as number) : 140;
     const duplicatedNode: FlowNode = {
       id: newId,
       type: data.type,
       position: {
-        x: (data as any).x || 100 + 40,
-        y: (data as any).y || 100 + 40,
+        x: posX,
+        y: posY,
       },
       data: {
         ...data,

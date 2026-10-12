@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
-import { Sparkles, Layers, ArrowRight, Plus } from "lucide-react";
+import { Sparkles, Layers } from "lucide-react";
 
 import { nodeTypes } from "@/components/canvas/nodes";
 import { edgeTypes } from "@/components/edges/SemanticEdge";
@@ -26,7 +26,6 @@ import { useChatStore } from "@/stores/chatStore";
 import type { FlowNode, FlowEdge } from "@/types/canvas";
 import type { NodeType } from "@/types/semantic";
 import { NODE_TYPE_CONFIG } from "@/lib/constants";
-import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
 import { AUTO_SAVE_DEBOUNCE_MS } from "@/lib/constants";
 
 export function CanvasArea() {
@@ -41,7 +40,6 @@ export function CanvasArea() {
   const onConnect = useCanvasStore((s) => s.onConnect);
   const addNode = useCanvasStore((s) => s.addNode);
   const setViewport = useCanvasStore((s) => s.setViewport);
-  const autoLayout = useCanvasStore((s) => s.autoLayout);
   const loadTemplate = useCanvasStore((s) => s.loadTemplate);
   const saveToLocalStorage = useCanvasStore((s) => s.saveToLocalStorage);
   const loadFromLocalStorage = useCanvasStore((s) => s.loadFromLocalStorage);

@@ -13,6 +13,7 @@ import { sanitizeGraph, sanitizeText } from "@/lib/sanitizer";
 import { computeGraphHash, findFocalNodes, extractSubgraph } from "@/engine/subgraph";
 import { inferModelTier, getModelForTier, MODEL_PROFILES } from "@/lib/models";
 import { ServerTiming } from "@/lib/serverTiming";
+import type { GraphMutation } from "@/types/mutations";
 
 // Allow streaming responses up to 45 seconds
 export const maxDuration = 45;
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
     if (!process.env.OPENAI_API_KEY) {
       const lower = sanitizedMessage.toLowerCase();
       let explanation = "";
-      const mutations: any[] = [];
+      const mutations: GraphMutation[] = [];
       const DEMO_HEADER = `[DEMONSTRATION ENGINE — Propose-Review-Apply Workflow (OPENAI_API_KEY Unconfigured)]\n\n`;
 
       if (lower.includes("redis") || lower.includes("cache")) {
@@ -104,7 +105,6 @@ export async function POST(req: Request) {
           mutations.push({
             action: "ADD_EDGE",
             edge: {
-              id: `e-${targetNode.id}-${cacheId}`,
               source: targetNode.id,
               target: cacheId,
               relationship: "reads_from",
@@ -132,7 +132,6 @@ export async function POST(req: Request) {
           mutations.push({
             action: "ADD_EDGE",
             edge: {
-              id: `e-${sourceNode.id}-${queueId}`,
               source: sourceNode.id,
               target: queueId,
               relationship: "publishes_to",

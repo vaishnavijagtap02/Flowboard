@@ -2,7 +2,7 @@
 // Graph scoping and delta utilities for token-efficient LLM interactions.
 // Computes deterministic graph hashes and extracts k-hop subgraphs around focal nodes.
 
-import { SemanticGraph, SemanticNode, SemanticEdge } from "@/types/semantic";
+import { SemanticGraph } from "@/types/semantic";
 
 /**
  * Computes a fast deterministic FNV-1a / DJB2-based hash of a semantic graph string

@@ -15,8 +15,6 @@ import {
   ArrowRight,
   Sparkles,
   GitPullRequest,
-  CheckCircle2,
-  XCircle,
 } from "lucide-react";
 
 export function MutationPlanMessage({ message }: { message: ChatMessage }) {

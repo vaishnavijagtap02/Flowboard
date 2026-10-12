@@ -9,15 +9,25 @@ import {
   type Node,
   useNodesState,
   useEdgesState,
-  Controls,
   Handle,
   Position,
 } from "@xyflow/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Sparkles, CheckCircle2 } from "lucide-react";
 
+interface HeroNodeProps {
+  data: {
+    label: string;
+    type: string;
+    color: string;
+    tech?: string;
+    icon?: React.ReactNode;
+  };
+  selected?: boolean;
+}
+
 // Sleek node cards for the interactive visual preview
-const HeroNode = ({ data, selected }: any) => {
+const HeroNode = ({ data, selected }: HeroNodeProps) => {
   return (
     <div
       className={`relative px-3.5 py-2.5 rounded-xl border bg-card/95 backdrop-blur-md shadow-lg transition-all duration-300 min-w-[130px] ${
@@ -235,7 +245,7 @@ export function InteractiveHeroVisual() {
           <div className="flex items-center gap-2 p-1.5 rounded-xl border border-border bg-card/90 shadow-xl backdrop-blur-xl">
             <Sparkles size={14} className="text-ai ml-2 shrink-0" />
             <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-xs">
-              AI Copilot: "Propose event-driven payment worker"
+              AI Copilot: &ldquo;Propose event-driven payment worker&rdquo;
             </span>
             <button
               onClick={handleSimulateMutation}

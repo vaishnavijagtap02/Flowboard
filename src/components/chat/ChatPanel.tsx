@@ -9,7 +9,7 @@ import { useChatStore } from "@/stores/chatStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
-import { X, Sparkles, Terminal, Trash2 } from "lucide-react";
+import { X, Sparkles, Trash2 } from "lucide-react";
 
 export function ChatPanel() {
   const isOpen = useUIStore((s) => s.isChatOpen);

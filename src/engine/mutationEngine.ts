@@ -18,7 +18,6 @@ import { validateMutation } from "./validator";
 import { computeNewNodePositions } from "./layoutEngine";
 import type { FlowNode, FlowEdge } from "@/types/canvas";
 import type {
-  GraphMutation,
   AIMutationPlan,
   MutationResult,
 } from "@/types/mutations";
@@ -34,7 +33,10 @@ export function parseMutationPlan(raw: unknown): AIMutationPlan | null {
     try {
       // Strip markdown code fences if present (e.g. ```json ... ``` or ``` ...)
       let cleaned = raw.trim();
-      if (cleaned.startsWith("```")) {
+      const codeFenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+      if (codeFenceMatch) {
+        cleaned = codeFenceMatch[1].trim();
+      } else if (cleaned.startsWith("```")) {
         cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
       }
       target = JSON.parse(cleaned);

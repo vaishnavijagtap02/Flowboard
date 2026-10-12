@@ -47,7 +47,7 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
-      const { error: signUpError, user } = await signUp(email, password);
+      const { error: signUpError } = await signUp(email, password);
       if (signUpError) {
         setError(signUpError.message);
       } else {
@@ -58,8 +58,8 @@ export default function SignUpPage() {
           router.push("/dashboard");
         }, 1500);
       }
-    } catch (err: any) {
-      setError(err?.message || "Failed to create account.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create account.");
     } finally {
       setLoading(false);
     }

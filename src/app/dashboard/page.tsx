@@ -11,15 +11,12 @@ import {
   Sparkles,
   ArrowRight,
   Trash2,
-  ExternalLink,
   Clock,
-  Shield,
   Sun,
   Moon,
   LogOut,
   FolderKanban,
   Database,
-  CloudCheck,
   AlertCircle,
   X,
 } from "lucide-react";
@@ -62,29 +59,42 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, isConfigured, router]);
 
-  // Fetch boards
-  const fetchBoards = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/boards");
-      const data = await res.json();
-      if (data.success) {
-        setBoards(data.boards || []);
-        setIsCloudPersisted(Boolean(data.isCloudPersisted));
-      } else {
-        setError(data.error || "Failed to load boards");
-      }
-    } catch (err: any) {
-      setError(err?.message || "Failed to connect to storage service");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchBoards();
-  }, []);
+    let ignore = false;
+    async function loadBoards() {
+      try {
+        const res = await fetch("/api/boards");
+        const data = await res.json();
+        if (ignore) return;
+        if (data.success) {
+          setBoards(data.boards || []);
+          setIsCloudPersisted(Boolean(data.isCloudPersisted));
+        } else {
+          setError(data.error || "Failed to load boards");
+        }
+      } catch (err: unknown) {
+        if (ignore) return;
+        setError(err instanceof Error ? err.message : "Failed to connect to storage service");
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadBoards();
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   // Filter boards
   const filteredBoards = useMemo(() => {
@@ -142,8 +152,8 @@ export default function DashboardPage() {
       } else {
         alert("Failed to initialize board: " + (data.error || "Unknown error"));
       }
-    } catch (err: any) {
-      alert("Error creating board: " + err?.message);
+    } catch (err: unknown) {
+      alert("Error creating board: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setIsCreating(false);
     }
@@ -290,7 +300,7 @@ export default function DashboardPage() {
             <p className="font-semibold mb-1">Error Loading Boards</p>
             <p className="text-muted-foreground mb-4">{error}</p>
             <button
-              onClick={fetchBoards}
+              onClick={handleRetry}
               className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground hover:bg-secondary text-xs"
             >
               Try Again

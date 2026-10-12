@@ -7,7 +7,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { NodePropertyEditor } from "./NodePropertyEditor";
 import { EdgePropertyEditor } from "./EdgePropertyEditor";
-import { X, Sliders, Layers, Network } from "lucide-react";
+import { X, Layers, Network } from "lucide-react";
 
 export function PropertySidebar() {
   const selectedNodeId = useUIStore((s) => s.selectedNodeId);

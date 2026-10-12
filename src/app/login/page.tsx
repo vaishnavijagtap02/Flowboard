@@ -4,14 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, Lock, Mail, ShieldAlert } from "lucide-react";
+import { Sparkles, ArrowRight, Eye, EyeOff, AlertCircle, Lock, Mail, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useUIStore } from "@/stores/uiStore";
 
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, isConfigured } = useAuth();
-  const theme = useUIStore((s) => s.theme);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,8 +46,8 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err?.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -183,7 +181,7 @@ export default function LoginPage() {
           {/* Alternative Demo Link */}
           <div className="mt-6 pt-5 border-t border-border flex flex-col gap-3 text-center text-xs">
             <p className="text-muted-foreground">
-              Don't have an account yet?{" "}
+              Don&apos;t have an account yet?{" "}
               <Link href="/signup" className="font-semibold text-foreground hover:text-ai underline-offset-4 hover:underline transition-colors">
                 Create one
               </Link>

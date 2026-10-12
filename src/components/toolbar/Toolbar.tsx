@@ -21,17 +21,16 @@ import {
   ArrowDownUp,
   Sun,
   Moon,
+  Camera,
 } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
 import { lintArchitecture } from "@/engine/linter";
 
-import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, LayoutDashboard } from "lucide-react";
 
 export function Toolbar({ isDemo = false }: { isDemo?: boolean }) {
-  const { user } = useAuth();
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
   const toggleChat = useUIStore((s) => s.toggleChat);
@@ -39,6 +38,7 @@ export function Toolbar({ isDemo = false }: { isDemo?: boolean }) {
   const toggleLinter = useUIStore((s) => s.toggleLinter);
   const isLinterOpen = useUIStore((s) => s.isLinterOpen);
   const openArtifactPanel = useUIStore((s) => s.openArtifactPanel);
+  const openVisionModal = useUIStore((s) => s.openVisionModal);
 
   const boardTitle = useCanvasStore((s) => s.boardTitle);
   const setBoardTitle = useCanvasStore((s) => s.setBoardTitle);
@@ -83,6 +83,9 @@ export function Toolbar({ isDemo = false }: { isDemo?: boolean }) {
   // Compute live architecture health
   const healthReport = useMemo(() => {
     if (nodes.length === 0) return null;
+    if (edges) {
+      // depend on edges to re-evaluate when topology connections change
+    }
     const graph = getSemanticGraph();
     return lintArchitecture(graph);
   }, [nodes, edges, getSemanticGraph]);
@@ -266,6 +269,19 @@ ${graph.edges.map((e) => `- ${e.source} --[${e.relationship}${e.protocol ? ` / $
         >
           <ArrowDownUp size={13} className="text-primary" />
           <span className="hidden sm:inline">Auto-Layout</span>
+        </button>
+
+        {/* Scan Architecture Screenshot Button */}
+        <button
+          onClick={openVisionModal}
+          className="flex items-center gap-1.5 rounded-lg border border-ai/40 bg-ai/10 px-2.5 py-1.5 text-xs font-semibold text-ai hover:bg-ai/20 hover:border-ai transition-all shadow-sm active:scale-95"
+          title="Scan Architecture from Screenshot or Meeting Whiteboard (GPT-4o Vision)"
+        >
+          <Camera size={13} className="text-ai" />
+          <span className="hidden sm:inline">Scan Screenshot</span>
+          <span className="rounded bg-ai/20 px-1 py-0.5 text-[9px] font-mono font-bold text-ai hidden md:inline">
+            Vision
+          </span>
         </button>
       </div>
 

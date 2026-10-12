@@ -3,7 +3,7 @@
 // Statically inspects the semantic graph for distributed system antipatterns,
 // security tier breaches, synchronous deadlocks, and SPOFs.
 
-import { SemanticGraph, SemanticNode, SemanticEdge } from "@/types/semantic";
+import { SemanticGraph, SemanticNode } from "@/types/semantic";
 
 export type IssueSeverity = "error" | "warning" | "info";
 

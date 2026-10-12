@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BoxSelect, Cpu, ShieldCheck, FileCode, CheckCircle2 } from "lucide-react";
+import { BoxSelect, Cpu, ShieldCheck, FileCode } from "lucide-react";
 
 const features = [
   {

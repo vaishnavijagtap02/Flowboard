@@ -1,12 +1,29 @@
 {
   "name": "flowboard",
   "version": "0.1.0",
-  "private": true,
+  "description": "AI-augmented visual system architecture studio & infrastructure compiler",
+  "author": "Vaishnavi Jagtap",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vaishnavijagtap02/Flowboard.git"
+  },
+  "keywords": [
+    "system-architecture",
+    "software-architecture",
+    "react-flow",
+    "ai-agent",
+    "dagre",
+    "docker-compose"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.74",
@@ -40,6 +57,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   }
 }

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Check, CheckCircle2, ShieldCheck, Plus, RefreshCw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Sparkles, Check, CheckCircle2, ShieldCheck, RefreshCw } from "lucide-react";
 
 export function ShowcaseSection() {
   const [applied, setApplied] = useState(false);
@@ -75,7 +74,7 @@ export function ShowcaseSection() {
 
               {/* Rationale */}
               <div className="py-4 text-xs text-muted-foreground leading-relaxed">
-                "High read frequency detected on PostgreSQL order queries. Proposing a dedicated Redis cache to offload 85% of read volume."
+                &ldquo;High read frequency detected on PostgreSQL order queries. Proposing a dedicated Redis cache to offload 85% of read volume.&rdquo;
               </div>
 
               {/* Diff list */}

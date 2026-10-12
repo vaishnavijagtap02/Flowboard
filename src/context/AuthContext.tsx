@@ -25,20 +25,21 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const configured = useMemo(
+    () => isSupabaseConfigured() && Boolean(getBrowserSupabaseClient()),
+    []
+  );
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const configured = useMemo(() => isSupabaseConfigured(), []);
+  const [loading, setLoading] = useState<boolean>(configured);
 
   useEffect(() => {
     if (!configured) {
-      setLoading(false);
       return;
     }
 
     const supabase = getBrowserSupabaseClient();
     if (!supabase) {
-      setLoading(false);
       return;
     }
 

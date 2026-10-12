@@ -13,8 +13,8 @@ import { PropertySidebar } from "@/components/sidebar/PropertySidebar";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ArtifactPanel } from "@/components/artifacts/ArtifactPanel";
 import { ArchitectureHealthDrawer } from "@/components/inspector/ArchitectureHealthDrawer";
+import { VisionUploadModal } from "@/components/canvas/VisionUploadModal";
 import { useCanvasStore } from "@/stores/canvasStore";
-import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
 
 function BoardLoader() {
   const searchParams = useSearchParams();
@@ -82,6 +82,9 @@ export default function Home() {
 
       {/* Architecture Linter & Health inspector (slide-over drawer) */}
       <ArchitectureHealthDrawer />
+
+      {/* Multimodal Architecture Scanner from Screenshot modal */}
+      <VisionUploadModal />
     </ReactFlowProvider>
   );
 }

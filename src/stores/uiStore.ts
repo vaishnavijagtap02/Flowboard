@@ -21,6 +21,7 @@ interface UIStore {
   isPropertySidebarOpen: boolean;
   isArtifactPanelOpen: boolean;
   isLinterOpen: boolean;
+  isVisionModalOpen: boolean;
   activeArtifact: GeneratedArtifact | null;
 
   // ─── Actions ────────────────────────────────────────────────────────────
@@ -34,6 +35,8 @@ interface UIStore {
   setLinterOpen: (open: boolean) => void;
   openArtifactPanel: () => void;
   closeArtifactPanel: () => void;
+  openVisionModal: () => void;
+  closeVisionModal: () => void;
   setActiveArtifact: (artifact: GeneratedArtifact | null) => void;
 }
 
@@ -60,6 +63,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   isPropertySidebarOpen: true,
   isArtifactPanelOpen: false,
   isLinterOpen: false,
+  isVisionModalOpen: false,
   activeArtifact: null,
 
   // ─── Theme Actions ──────────────────────────────────────────────────────
@@ -123,6 +127,14 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   closeArtifactPanel: () => {
     set({ isArtifactPanelOpen: false, activeArtifact: null });
+  },
+
+  openVisionModal: () => {
+    set({ isVisionModalOpen: true });
+  },
+
+  closeVisionModal: () => {
+    set({ isVisionModalOpen: false });
   },
 
   setActiveArtifact: (artifact) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, Layers, Home } from "lucide-react";
+import { Sparkles, Home } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -19,7 +19,7 @@ export default function NotFound() {
         </h1>
 
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-8">
-          The node or route you're attempting to reach does not exist in the active system topology.
+          The node or route you&apos;re attempting to reach does not exist in the active system topology.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, Layers } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export function FooterSection() {
   return (

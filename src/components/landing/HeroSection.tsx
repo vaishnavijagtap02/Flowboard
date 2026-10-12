@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Terminal, Play } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { InteractiveHeroVisual } from "./InteractiveHeroVisual";
 
@@ -48,7 +48,7 @@ export function HeroSection() {
           transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
           className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed"
         >
-          Map microservices, databases, and message brokers visually. Flowboard's AI copilot
+          Map microservices, databases, and message brokers visually. Flowboard&apos;s AI copilot
           identifies single points of failure, proposes architectural improvements, and lets you
           review every change before applying.
         </motion.p>

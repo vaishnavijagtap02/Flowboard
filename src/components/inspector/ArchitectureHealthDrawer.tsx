@@ -13,9 +13,6 @@ import {
   CheckCircle2,
   X,
   Sparkles,
-  ArrowRight,
-  RefreshCw,
-  Zap,
 } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -35,6 +32,9 @@ export function ArchitectureHealthDrawer() {
 
   const report = useMemo(() => {
     if (nodes.length === 0) return null;
+    if (edges) {
+      // depend on edges to re-evaluate when edge connections change
+    }
     const graph = getSemanticGraph();
     return lintArchitecture(graph);
   }, [nodes, edges, getSemanticGraph]);

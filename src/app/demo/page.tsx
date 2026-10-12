@@ -9,9 +9,9 @@ import { PropertySidebar } from "@/components/sidebar/PropertySidebar";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ArtifactPanel } from "@/components/artifacts/ArtifactPanel";
 import { ArchitectureHealthDrawer } from "@/components/inspector/ArchitectureHealthDrawer";
+import { VisionUploadModal } from "@/components/canvas/VisionUploadModal";
 import { useCanvasStore } from "@/stores/canvasStore";
-import { ARCHITECTURE_TEMPLATES } from "@/lib/templates";
-import { Sparkles, ArrowRight, RotateCcw, ShieldCheck, Info, X } from "lucide-react";
+import { Sparkles, ArrowRight, RotateCcw, X } from "lucide-react";
 
 export default function DemoPage() {
   const loadTemplate = useCanvasStore((s) => s.loadTemplate);
@@ -95,6 +95,9 @@ export default function DemoPage() {
 
       {/* Architecture Linter & Health drawer */}
       <ArchitectureHealthDrawer />
+
+      {/* Multimodal Architecture Scanner from Screenshot modal */}
+      <VisionUploadModal />
     </ReactFlowProvider>
   );
 }

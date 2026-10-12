@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { ArtifactPreview } from "./ArtifactPreview";
-import { X, FileCode2, FileText, FileJson, Settings, Sparkles, Layers } from "lucide-react";
+import { X, FileCode2, FileText, FileJson, Settings, Sparkles } from "lucide-react";
 import type { ArtifactType, GeneratedArtifact } from "@/types/artifacts";
 
 const ARTIFACT_OPTIONS: {
@@ -42,6 +42,21 @@ const ARTIFACT_OPTIONS: {
   },
 ];
 
+function buildArtifact(
+  artifactType: ArtifactType,
+  filename: string,
+  language: string,
+  content: string
+): GeneratedArtifact {
+  return {
+    type: artifactType,
+    filename,
+    language,
+    content,
+    timestamp: Date.now(),
+  };
+}
+
 export function ArtifactPanel() {
   const isOpen = useUIStore((s) => s.isArtifactPanelOpen);
   const closePanel = useUIStore((s) => s.closeArtifactPanel);
@@ -52,8 +67,6 @@ export function ArtifactPanel() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleGenerate = async (artifactType: ArtifactType) => {
     if (nodes.length === 0) {
@@ -94,14 +107,7 @@ export function ArtifactPanel() {
         }
       }
 
-      const artifact: GeneratedArtifact = {
-        type: artifactType,
-        filename,
-        language,
-        content,
-        timestamp: Date.now(),
-      };
-
+      const artifact = buildArtifact(artifactType, filename, language, content);
       setActiveArtifact(artifact);
     } catch (err) {
       setError(
@@ -111,6 +117,8 @@ export function ArtifactPanel() {
       setIsGenerating(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
