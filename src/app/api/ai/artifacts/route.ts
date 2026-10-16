@@ -14,11 +14,18 @@ import { ArtifactRequestSchema, ARTIFACT_METADATA } from "@/schemas/artifacts";
 import { sanitizeGraph } from "@/lib/sanitizer";
 import { validateGraphForArtifacts } from "@/engine/artifactValidator";
 import { ServerTiming } from "@/lib/serverTiming";
+import { checkRateLimit, createRateLimitResponse } from "@/lib/rateLimit";
 
 // Allow streaming responses up to 60 seconds (artifact generation can be longer)
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  // ── Step 0: Rate Limiting (20 requests/min per IP) ───────────────────────────
+  const rateLimit = checkRateLimit(req, { maxRequests: 20, windowMs: 60_000 });
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
+  }
+
   const timing = new ServerTiming();
   try {
     timing.start("validation");

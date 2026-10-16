@@ -7,6 +7,7 @@ import { generateText } from "ai";
 import { isAIConfigured, getVisionModel } from "@/lib/models";
 import { AIMutationPlanSchema } from "@/schemas/mutations";
 import { ServerTiming } from "@/lib/serverTiming";
+import { checkRateLimit, createRateLimitResponse } from "@/lib/rateLimit";
 import type { AIMutationPlan } from "@/types/mutations";
 
 export const maxDuration = 45;
@@ -67,6 +68,12 @@ Important:
 - Avoid self-loops (source !== target).`;
 
 export async function POST(req: Request) {
+  // ── Step 0: Rate Limiting (15 requests/min per IP) ───────────────────────────
+  const rateLimit = checkRateLimit(req, { maxRequests: 15, windowMs: 60_000 });
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
+  }
+
   const timing = new ServerTiming();
 
   try {

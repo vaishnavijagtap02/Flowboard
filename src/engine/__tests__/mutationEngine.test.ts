@@ -114,4 +114,74 @@ describe("Mutation Engine (Safe Agentic Graph Patching)", () => {
     expect(nodes).toHaveLength(1);
     expect(edges).toHaveLength(0);
   });
+
+  it("self-heals imperfect LLM output with lowercase actions and synonym types", () => {
+    const rawAiOutput = `
+    {
+      "mutations": [
+        {
+          "action": "add_node",
+          "node": {
+            "name": "Web Client",
+            "type": "frontend"
+          }
+        },
+        {
+          "action": "add_node",
+          "node": {
+            "id": "srv-backend",
+            "name": "API Backend",
+            "type": "microservice"
+          }
+        },
+        {
+          "action": "add_edge",
+          "edge": {
+            "source": "web-client",
+            "target": "srv-backend",
+            "relationship": "calls"
+          }
+        }
+      ]
+    }
+    `;
+
+    const parsed = parseMutationPlan(rawAiOutput);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.mutations).toHaveLength(3);
+    expect(parsed?.mutations[0].action).toBe("ADD_NODE");
+    expect((parsed?.mutations[0] as { node: { type: string } }).node.type).toBe("client");
+    expect((parsed?.mutations[1] as { node: { type: string } }).node.type).toBe("service");
+    expect((parsed?.mutations[2] as { edge: { relationship: string } }).edge.relationship).toBe("connects_to");
+  });
+
+  it("computes spacious non-overlapping positions when adding multiple new nodes", () => {
+    const existingNodes: FlowNode[] = [
+      {
+        id: "db-main",
+        type: "database",
+        position: { x: 500, y: 300 },
+        data: { id: "db-main", type: "database", name: "PostgreSQL DB" },
+      },
+    ];
+
+    const plan: AIMutationPlan = {
+      explanation: "Add multiple microservices",
+      mutations: [
+        { action: "ADD_NODE", node: { id: "srv-a", type: "service", name: "Service A" } },
+        { action: "ADD_NODE", node: { id: "srv-b", type: "service", name: "Service B" } },
+        { action: "ADD_EDGE", edge: { source: "srv-a", target: "db-main", relationship: "writes_to" } },
+        { action: "ADD_EDGE", edge: { source: "srv-b", target: "db-main", relationship: "reads_from" } },
+      ],
+    };
+
+    const { nodes } = processAndApplyMutations(plan, existingNodes, []);
+    expect(nodes).toHaveLength(3);
+
+    // Verify nodes are not stacked right on top of each other
+    const srvA = nodes.find((n) => n.id === "srv-a")!;
+    const srvB = nodes.find((n) => n.id === "srv-b")!;
+    const distance = Math.hypot(srvA.position.x - srvB.position.x, srvA.position.y - srvB.position.y);
+    expect(distance).toBeGreaterThan(150);
+  });
 });

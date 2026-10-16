@@ -42,6 +42,88 @@ function sanitizeJsonString(raw: string): string {
   return cleaned;
 }
 
+function normalizeMutation(item: unknown): unknown {
+  if (!item || typeof item !== "object") return item;
+  const mut = { ...(item as Record<string, unknown>) };
+
+  // 1. Normalize action string
+  const actionStr = String(mut.action || "").toUpperCase().trim().replace(/[- ]/g, "_");
+  if (["ADD_NODE", "ADDNODE", "ADD_COMPONENT"].includes(actionStr)) {
+    mut.action = "ADD_NODE";
+  } else if (["REMOVE_NODE", "REMOVENODE", "DELETE_NODE"].includes(actionStr)) {
+    mut.action = "REMOVE_NODE";
+  } else if (["UPDATE_NODE", "UPDATENODE", "MODIFY_NODE"].includes(actionStr)) {
+    mut.action = "UPDATE_NODE";
+  } else if (["ADD_EDGE", "ADDEDGE", "CONNECT"].includes(actionStr)) {
+    mut.action = "ADD_EDGE";
+  } else if (["REMOVE_EDGE", "REMOVEEDGE", "DISCONNECT"].includes(actionStr)) {
+    mut.action = "REMOVE_EDGE";
+  }
+
+  // 2. Sanitize ADD_NODE
+  if (mut.action === "ADD_NODE" && mut.node && typeof mut.node === "object") {
+    const node = { ...(mut.node as Record<string, unknown>) };
+    if (!node.id || typeof node.id !== "string") {
+      node.id = node.name
+        ? String(node.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+        : `node-${Date.now().toString(36)}`;
+    }
+    if (!node.name || typeof node.name !== "string") {
+      node.name = String(node.id);
+    }
+
+    // Normalize NodeType
+    const typeStr = String(node.type || "service").toLowerCase().trim();
+    if (["client", "frontend", "web", "ui", "mobile", "browser"].includes(typeStr)) {
+      node.type = "client";
+    } else if (["database", "db", "storage", "postgres", "mysql", "mongodb", "sql", "nosql"].includes(typeStr)) {
+      node.type = "database";
+    } else if (["cache", "redis", "memcached"].includes(typeStr)) {
+      node.type = "cache";
+    } else if (["queue", "bus", "broker", "kafka", "rabbitmq", "pubsub", "stream"].includes(typeStr)) {
+      node.type = "queue";
+    } else if (["gateway", "ingress", "proxy", "load_balancer", "traefik", "kong"].includes(typeStr)) {
+      node.type = "gateway";
+    } else if (["api", "endpoint", "rest", "graphql", "grpc", "llm"].includes(typeStr)) {
+      node.type = "api";
+    } else {
+      node.type = "service";
+    }
+
+    if (node.responsibilities && !Array.isArray(node.responsibilities)) {
+      node.responsibilities = [String(node.responsibilities)];
+    }
+
+    mut.node = node;
+  }
+
+  // 3. Sanitize ADD_EDGE
+  if (mut.action === "ADD_EDGE" && mut.edge && typeof mut.edge === "object") {
+    const edge = { ...(mut.edge as Record<string, unknown>) };
+    if (edge.source && edge.target) {
+      edge.source = String(edge.source);
+      edge.target = String(edge.target);
+
+      const relStr = String(edge.relationship || "connects_to").toLowerCase().trim().replace(/[- ]/g, "_");
+      if (["reads_from", "reads", "queries", "fetches", "fetches_from"].includes(relStr)) {
+        edge.relationship = "reads_from";
+      } else if (["writes_to", "writes", "saves", "persists", "stores"].includes(relStr)) {
+        edge.relationship = "writes_to";
+      } else if (["publishes_to", "publishes", "produces", "emits"].includes(relStr)) {
+        edge.relationship = "publishes_to";
+      } else if (["subscribes_to", "subscribes", "consumes", "listens"].includes(relStr)) {
+        edge.relationship = "subscribes_to";
+      } else {
+        edge.relationship = "connects_to";
+      }
+
+      mut.edge = edge;
+    }
+  }
+
+  return mut;
+}
+
 /**
  * Parses and repairs an AI mutation plan from raw LLM output text.
  */
@@ -90,6 +172,14 @@ export function parseAndRepairMutationPlan(rawOutput: string): RepairResult {
     }
   }
 
+  // Handle case where root is directly an array of mutations
+  if (Array.isArray(parsedRaw)) {
+    parsedRaw = {
+      explanation: "AI proposed architecture updates",
+      mutations: parsedRaw,
+    };
+  }
+
   // Attempt strict validation first
   const strictResult = AIMutationPlanSchema.safeParse(parsedRaw);
   if (strictResult.success) {
@@ -109,12 +199,19 @@ export function parseAndRepairMutationPlan(rawOutput: string): RepairResult {
       ? candidate.explanation 
       : "AI proposed architecture updates";
 
-    const rawMutations = Array.isArray(candidate.mutations) ? candidate.mutations : [];
+    const rawMutations = Array.isArray(candidate.mutations) 
+      ? candidate.mutations 
+      : Array.isArray(candidate.plan) 
+      ? candidate.plan 
+      : Array.isArray(candidate.changes) 
+      ? candidate.changes 
+      : [];
     const validMutations: GraphMutation[] = [];
     let dropped = 0;
 
     for (const item of rawMutations) {
-      const mutResult = GraphMutationSchema.safeParse(item);
+      const normalized = normalizeMutation(item);
+      const mutResult = GraphMutationSchema.safeParse(normalized);
       if (mutResult.success) {
         validMutations.push(mutResult.data);
       } else {

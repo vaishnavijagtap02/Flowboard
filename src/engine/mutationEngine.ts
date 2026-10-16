@@ -16,6 +16,7 @@ import { nanoid } from "nanoid";
 import { AIMutationPlanSchema, GraphMutationSchema } from "@/schemas/mutations";
 import { validateMutation } from "./validator";
 import { computeNewNodePositions } from "./layoutEngine";
+import { parseAndRepairMutationPlan } from "./mutationRepair";
 import type { FlowNode, FlowEdge } from "@/types/canvas";
 import type {
   AIMutationPlan,
@@ -24,33 +25,36 @@ import type {
 
 /**
  * Parses and validates a raw mutation plan from AI output.
+ * Uses the self-healing mutationRepair engine to auto-fix minor formatting and schema quirks.
  * Returns the typed plan or null if parsing fails.
  */
 export function parseMutationPlan(raw: unknown): AIMutationPlan | null {
-  let target = raw;
-
   if (typeof raw === "string") {
-    try {
-      // Strip markdown code fences if present (e.g. ```json ... ``` or ``` ...)
-      let cleaned = raw.trim();
-      const codeFenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-      if (codeFenceMatch) {
-        cleaned = codeFenceMatch[1].trim();
-      } else if (cleaned.startsWith("```")) {
-        cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    const repairResult = parseAndRepairMutationPlan(raw);
+    if (repairResult.success && repairResult.plan) {
+      if (repairResult.warnings.length > 0) {
+        console.warn("[MutationEngine] Repaired mutation plan:", repairResult.warnings);
       }
-      target = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("Failed to parse mutation plan JSON string:", e);
-      return null;
+      return repairResult.plan;
+    }
+  } else if (raw && typeof raw === "object") {
+    try {
+      const jsonStr = JSON.stringify(raw);
+      const repairResult = parseAndRepairMutationPlan(jsonStr);
+      if (repairResult.success && repairResult.plan) {
+        return repairResult.plan;
+      }
+    } catch {
+      // Fall through
+    }
+    const result = AIMutationPlanSchema.safeParse(raw);
+    if (result.success) {
+      return result.data as AIMutationPlan;
     }
   }
 
-  const result = AIMutationPlanSchema.safeParse(target);
-  if (result.success) {
-    return result.data as AIMutationPlan;
-  }
-  console.error("Mutation plan validation failed:", result.error.issues);
+  // Graceful fallback with warn instead of error (prevents Turbopack error overlay modal)
+  console.warn("[MutationEngine] Could not parse or repair mutation plan payload");
   return null;
 }
 

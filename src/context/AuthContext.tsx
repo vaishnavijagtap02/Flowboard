@@ -11,6 +11,8 @@ interface AuthContextType {
   isConfigured: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; user?: User | null }>;
+  resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
+  signInAsGuest: (email?: string) => void;
   signOut: () => Promise<void>;
 }
 
@@ -21,6 +23,8 @@ const AuthContext = createContext<AuthContextType>({
   isConfigured: false,
   signIn: async () => ({ error: new Error("Auth not initialized") }),
   signUp: async () => ({ error: new Error("Auth not initialized") }),
+  resendConfirmation: async () => ({ error: new Error("Auth not initialized") }),
+  signInAsGuest: () => {},
   signOut: async () => {},
 });
 
@@ -31,15 +35,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState<boolean>(configured);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Check if there is an active local/guest session
+    if (typeof window !== "undefined") {
+      const savedGuest = localStorage.getItem("flowboard_guest_user");
+      if (savedGuest) {
+        try {
+          const parsed = JSON.parse(savedGuest);
+          setUser(parsed);
+          setLoading(false);
+          return;
+        } catch {
+          // ignore corrupted data
+        }
+      }
+    }
+
     if (!configured) {
+      setLoading(false);
       return;
     }
 
     const supabase = getBrowserSupabaseClient();
     if (!supabase) {
+      setLoading(false);
       return;
     }
 
@@ -108,9 +129,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: new Error("Supabase client unavailable") };
     }
 
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/dashboard`
+        : undefined;
+
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
     });
 
     if (error) {
@@ -122,7 +151,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null, user: data.user };
   };
 
+  const resendConfirmation = async (email: string) => {
+    if (!configured) {
+      return {
+        error: new Error(
+          "Supabase Auth is not configured. Please define NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+        ),
+      };
+    }
+
+    const supabase = getBrowserSupabaseClient();
+    if (!supabase) {
+      return { error: new Error("Supabase client unavailable") };
+    }
+
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/dashboard`
+        : undefined;
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
+    });
+
+    if (error) {
+      return { error };
+    }
+
+    return { error: null };
+  };
+
+  const signInAsGuest = (email?: string) => {
+    const targetEmail = email?.trim() || "architect@flowboard.dev";
+    const guestUser = {
+      id: "guest-user",
+      email: targetEmail,
+      aud: "authenticated",
+      role: "authenticated",
+      created_at: new Date().toISOString(),
+      app_metadata: { provider: "local" },
+      user_metadata: { name: targetEmail.split("@")[0] },
+    } as unknown as User;
+
+    setUser(guestUser);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("flowboard_guest_user", JSON.stringify(guestUser));
+    }
+  };
+
   const signOut = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("flowboard_guest_user");
+    }
+
     if (!configured) {
       setUser(null);
       setSession(null);
@@ -146,6 +231,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isConfigured: configured,
         signIn,
         signUp,
+        resendConfirmation,
+        signInAsGuest,
         signOut,
       }}
     >

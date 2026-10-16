@@ -64,6 +64,6 @@ export const GraphMutationSchema = z.discriminatedUnion("action", [
 
 // ─── AIMutationPlan ──────────────────────────────────────────────────────────
 export const AIMutationPlanSchema = z.object({
-  explanation: z.string(),
+  explanation: z.string().optional().default("Proposed architectural changes"),
   mutations: z.array(GraphMutationSchema),
 });

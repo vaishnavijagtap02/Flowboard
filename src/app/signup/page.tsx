@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp, isConfigured } = useAuth();
+  const { signUp, signInAsGuest, isConfigured } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,16 +47,17 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
-      const { error: signUpError } = await signUp(email, password);
+      const { error: signUpError, user: newUser } = await signUp(email, password);
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        setSuccess(
-          "Account created successfully! Check your email for a confirmation link, or proceed to your dashboard."
-        );
+        if (!newUser) {
+          signInAsGuest(email);
+        }
+        setSuccess("Account created successfully! Taking you to dashboard...");
         setTimeout(() => {
           router.push("/dashboard");
-        }, 1500);
+        }, 700);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create account.");

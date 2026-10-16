@@ -12,15 +12,15 @@ import dagre from "dagre";
 import type { FlowNode, FlowEdge } from "@/types/canvas";
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from "@/lib/constants";
 
-const HORIZONTAL_SPACING = 100;
-const VERTICAL_SPACING = 80;
+const HORIZONTAL_SPACING = 150;
+const VERTICAL_SPACING = 140;
 
 /**
  * Computes positions for newly added nodes.
  *
- * Existing nodes are added to the Dagre graph as fixed anchors —
- * their positions are locked and Dagre uses them to determine where
- * new nodes should go. Only new nodes get their positions from Dagre.
+ * For multi-node additions (or new architectures), runs a full topological layout
+ * to ensure all components are cleanly separated with generous breathing room.
+ * For single-node additions, anchors relative to connected nodes with collision avoidance.
  *
  * @param existingNodes  Nodes already on the canvas (positions preserved)
  * @param existingEdges  Edges already on the canvas
@@ -39,14 +39,27 @@ export function computeNewNodePositions(
   // If no new nodes, nothing to compute
   if (newNodeIds.size === 0) return new Map();
 
+  // If adding 2 or more nodes, or if existing canvas is empty or has only 1 node,
+  // lay out all nodes using Dagre full topological layout to prevent cramped overlapping clusters!
+  if (newNodeIds.size >= 2 || existingNodes.length <= 1) {
+    const laidOut = layoutEntireGraph(allNodes, allEdges, "TB");
+    const positions = new Map<string, { x: number; y: number }>();
+    for (const node of laidOut) {
+      if (newNodeIds.has(node.id)) {
+        positions.set(node.id, node.position);
+      }
+    }
+    return positions;
+  }
+
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: "TB",
     nodesep: HORIZONTAL_SPACING,
     ranksep: VERTICAL_SPACING,
-    marginx: 40,
-    marginy: 40,
+    marginx: 80,
+    marginy: 80,
   });
 
   // Add ALL nodes to the Dagre graph
@@ -95,7 +108,7 @@ export function computeNewNodePositions(
         connectedExisting.length;
 
       // Use Dagre's relative positioning from the connected nodes
-      // but anchor to the average existing position
+      // but anchor to the average existing position with clearance
       const anchorNode = g.node(connectedExisting[0].id);
       const anchorX = anchorNode?.x ?? 0;
       const anchorY = anchorNode?.y ?? 0;
@@ -103,7 +116,6 @@ export function computeNewNodePositions(
       y = avgY + (dagreNode.y - anchorY);
     } else if (existingNodes.length > 0) {
       // No edges to existing nodes — place in an empty area
-      // Find the bounding box of existing nodes and place below it
       const maxY = Math.max(
         ...existingNodes.map((n) => n.position.y + DEFAULT_NODE_HEIGHT)
       );
@@ -145,7 +157,7 @@ function findConnectedExistingNodes(
 
 /**
  * Lays out the entire graph automatically using Dagre.
- * Useful for user-triggered "Auto-Layout" button in the toolbar.
+ * Features generous spacing (150px nodesep, 160px ranksep) so cards never overlap.
  */
 export function layoutEntireGraph(
   nodes: FlowNode[],
@@ -158,10 +170,10 @@ export function layoutEntireGraph(
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: direction,
-    nodesep: 90,
-    ranksep: 90,
-    marginx: 80,
-    marginy: 80,
+    nodesep: 150,
+    ranksep: 160,
+    marginx: 100,
+    marginy: 100,
   });
 
   for (const node of nodes) {

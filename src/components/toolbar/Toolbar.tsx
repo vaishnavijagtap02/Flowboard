@@ -285,27 +285,8 @@ ${graph.edges.map((e) => `- ${e.source} --[${e.relationship}${e.protocol ? ` / $
         </button>
       </div>
 
-      {/* ─── Right: Theme Toggle, Linter, AI, Artifacts ──────────────────── */}
+      {/* ─── Right: Linter, Artifacts, AI Copilot & Utilities ──────────── */}
       <div className="flex items-center gap-2">
-        {/* Theme Switcher Capsule (Midnight Navy & Ice Blue) */}
-        <button
-          onClick={toggleTheme}
-          className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:bg-secondary/60 transition-all shadow-sm"
-          title="Toggle Midnight Navy & Ice Blue theme"
-        >
-          {theme === "light" ? (
-            <>
-              <Sun size={12} className="text-amber-500" />
-              <span className="text-[11px] font-semibold text-foreground">Porcelain Ice</span>
-            </>
-          ) : (
-            <>
-              <Moon size={12} className="text-ice" />
-              <span className="text-[11px] font-semibold text-ice">Midnight Navy</span>
-            </>
-          )}
-        </button>
-
         {/* Architecture Health Pill */}
         <button
           onClick={toggleLinter}
@@ -434,6 +415,20 @@ ${graph.edges.map((e) => `- ${e.source} --[${e.relationship}${e.protocol ? ` / $
             </div>
           )}
         </div>
+
+        {/* Theme Switcher Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center justify-center rounded-lg border border-border bg-card p-1.5 text-foreground/70 hover:bg-secondary/60 hover:text-foreground transition-colors"
+          title={theme === "light" ? "Switch to Midnight Navy (Dark mode)" : "Switch to Porcelain Ice (Light mode)"}
+          aria-label="Toggle color theme"
+        >
+          {theme === "light" ? (
+            <Sun size={13} className="text-amber-500" />
+          ) : (
+            <Moon size={13} className="text-ice" />
+          )}
+        </button>
 
         {/* Navigation Action CTA (Demo vs Dashboard) */}
         {isDemo ? (

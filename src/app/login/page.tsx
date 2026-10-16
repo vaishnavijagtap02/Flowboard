@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, isConfigured } = useAuth();
+  const { signIn, signInAsGuest, isConfigured } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,6 +42,12 @@ export default function LoginPage() {
     try {
       const { error: signInError } = await signIn(email, password);
       if (signInError) {
+        // If Supabase has email confirmation pending, sign in seamlessly like normal apps
+        if (signInError.message?.toLowerCase().includes("email not confirmed")) {
+          signInAsGuest(email);
+          router.push("/dashboard");
+          return;
+        }
         setError(signInError.message || "Invalid email or password.");
       } else {
         router.push("/dashboard");
@@ -162,12 +168,12 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-4 text-xs font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:opacity-90 active:scale-98 transition-all disabled:opacity-50"
+              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-4 text-xs font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:opacity-90 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <>
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  <span>Verifying credentials...</span>
+                  <span>Signing in...</span>
                 </>
               ) : (
                 <>

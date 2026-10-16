@@ -13,12 +13,19 @@ import { sanitizeGraph, sanitizeText } from "@/lib/sanitizer";
 import { computeGraphHash, findFocalNodes, extractSubgraph } from "@/engine/subgraph";
 import { inferModelTier, getModelForTier, MODEL_PROFILES, isAIConfigured } from "@/lib/models";
 import { ServerTiming } from "@/lib/serverTiming";
+import { checkRateLimit, createRateLimitResponse } from "@/lib/rateLimit";
 import type { GraphMutation } from "@/types/mutations";
 
 // Allow streaming responses up to 45 seconds
 export const maxDuration = 45;
 
 export async function POST(req: Request) {
+  // ── Step 0: Rate Limiting (30 requests/min per IP) ───────────────────────────
+  const rateLimit = checkRateLimit(req, { maxRequests: 30, windowMs: 60_000 });
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
+  }
+
   const timing = new ServerTiming();
   try {
     timing.start("validation");

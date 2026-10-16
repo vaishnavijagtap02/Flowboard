@@ -175,8 +175,8 @@ export const EDGE_RELATIONSHIPS: EdgeRelationship[] = [
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
-export const DEFAULT_NODE_WIDTH = 220;
-export const DEFAULT_NODE_HEIGHT = 80;
+export const DEFAULT_NODE_WIDTH = 280;
+export const DEFAULT_NODE_HEIGHT = 150;
 
 export const LOCALSTORAGE_KEY = "flowboard:canvas";
 

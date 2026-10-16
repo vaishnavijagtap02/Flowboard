@@ -48,7 +48,27 @@ export const GEMINI_PROFILES: Record<ModelTier, ModelConfig> = {
   },
 };
 
-export const MODEL_PROFILES = OPENAI_PROFILES;
+/**
+ * Returns the model configuration profile (temperature, token limits) for the given tier,
+ * resolving to the active provider (Gemini or OpenAI).
+ */
+export function getModelProfile(tier: ModelTier = "standard"): ModelConfig {
+  const provider = getAIProvider();
+  if (provider === "gemini") {
+    return GEMINI_PROFILES[tier] || GEMINI_PROFILES.standard;
+  }
+  return OPENAI_PROFILES[tier] || OPENAI_PROFILES.standard;
+}
+
+/**
+ * Dynamic proxy ensuring MODEL_PROFILES always accesses the configuration for the active provider.
+ */
+export const MODEL_PROFILES: Record<ModelTier, ModelConfig> = new Proxy({} as Record<ModelTier, ModelConfig>, {
+  get(_, prop: string) {
+    const tier = (prop as ModelTier) || "standard";
+    return getModelProfile(tier);
+  },
+});
 
 /**
  * Returns true if an AI provider API key is configured (Gemini or OpenAI).
